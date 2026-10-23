@@ -7,7 +7,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, set, update, onValue, onDisconnect, remove, serverTimestamp, off, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, setPersistence, browserLocalPersistence, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBIR5Fq5yem9xjolIhgkLd9M5JVGWb_llI",
@@ -30,6 +30,9 @@
         window.auth = auth; window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword; window.sendPasswordResetEmail = sendPasswordResetEmail;
         window.onAuthStateChanged = onAuthStateChanged; window.signOut = signOut;
+        window.EmailAuthProvider = EmailAuthProvider;
+        window.reauthenticateWithCredential = reauthenticateWithCredential;
+        window.updatePassword = updatePassword;
 
         window.dispatchEvent(new Event('firebaseReady'));
     </script>
@@ -38,29 +41,50 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #8ab4f8; background-image: url('https://images.unsplash.com/photo-1554034483-04fda0d3507b?q=80&w=2000&auto=format&fit=crop'); background-size: cover; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; overflow: hidden; }
         .logo-magica { mix-blend-mode: multiply; }
         .msn-window { width: 850px; height: 600px; background: #e3efff; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #99bce8; position: relative; }
-        .title-bar { background: linear-gradient(to bottom, #d1e0f5, #a7c8f0); height: 38px; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; border-bottom: 1px solid #8ab4f8; flex-shrink: 0; }
-        .title-text { font-weight: bold; color: #003366; font-size: 13px; display: flex; align-items: center; gap: 8px; }
-        .title-text img { height: 28px; width: auto; }
-        .window-controls { display: flex; gap: 5px; }
+        .title-bar { background: linear-gradient(to bottom, #d1e0f5, #a7c8f0); height: 38px; display: flex; justify-content: space-between; align-items: center; padding: 0 8px; border-bottom: 1px solid #8ab4f8; flex-shrink: 0; gap: 6px; }
+        .title-text { font-weight: bold; color: #003366; font-size: 13px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .title-text img { height: 26px; width: auto; }
+
+        .top-tabs { display: flex; gap: 4px; flex: 1; justify-content: center; overflow: hidden; }
+        .top-tab { background: linear-gradient(to bottom, #e3efff, #c5d9f0); border: 1px solid #7f9db9; border-radius: 4px; padding: 3px 10px; font-size: 11px; font-weight: bold; color: #003366; cursor: pointer; white-space: nowrap; transition: 0.15s; display: flex; align-items: center; gap: 3px; }
+        .top-tab:hover { background: linear-gradient(to bottom, #f0f5fc, #d1e0f5); }
+        .top-tab.active { background: white; color: #003366; border-bottom-color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+
+        .window-controls { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
         .win-btn { width: 20px; height: 20px; border-radius: 3px; border: 1px solid #7f9db9; background: #d1e0f5; cursor: pointer; font-size: 10px; display: flex; justify-content: center; align-items: center; font-weight: bold;}
         .win-btn.close { background: #e81123; color: white; border-color: #c50f1f; }
 
         .main-area { display: flex; flex: 1; overflow: hidden; min-height: 0; }
         .sidebar { width: 260px; background: white; border-right: 1px solid #b2c7e3; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; min-height: 0; }
+        .sidebar-view { display: flex; flex-direction: column; }
         .user-profile { padding: 10px; background: #f0f5fc; border-bottom: 1px solid #d1e0f5; text-align: center; flex-shrink: 0;}
 
         .avatar { width: 60px; height: 60px; background: #a7c8f0; border-radius: 5px; margin: 0 auto 5px; display: flex; justify-content: center; align-items: center; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; cursor: pointer; position: relative;}
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
         .avatar:hover::after { content: '📷 Trocar'; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); color: white; display: flex; justify-content: center; align-items: center; font-size: 10px; font-weight: bold; }
 
-        .user-name-display { font-weight: bold; color: #003366; font-size: 13px; margin-bottom: 5px; display: flex; justify-content: center; align-items: center; gap: 5px;}
+        .user-name-display { font-weight: bold; color: #003366; font-size: 13px; margin-bottom: 5px; display: flex; justify-content: center; align-items: center; gap: 4px;}
         .user-name-edit { cursor: pointer; padding: 0 3px; border-radius: 3px; }
         .user-name-edit:hover { background: #d1e0f5; }
+        .gear-icon { cursor: pointer; padding: 2px 3px; font-size: 13px; border-radius: 3px; transition: 0.2s; line-height: 1; }
+        .gear-icon:hover { background: #d1e0f5; transform: rotate(45deg); }
         .btn-sair { font-size: 10px; background: #e81123; color: white; border: none; border-radius: 3px; padding: 2px 6px; cursor: pointer; }
         .status-selector { width: 95%; padding: 3px; margin-bottom: 5px; border: 1px solid #99bce8; border-radius: 3px; font-size: 11px; color: #003366; background: white; cursor: pointer; outline: none; }
         .user-recado { font-size: 11px; color: #666; font-style: italic; width: 95%; border: 1px solid #ccc; padding: 3px; box-sizing: border-box; border-radius: 3px;}
 
-        .contacts-header { background: #e3efff; padding: 5px 10px; font-size: 11px; font-weight: bold; color: #003366; display: flex; justify-content: space-between; border-bottom: 1px solid #b2c7e3; border-top: 1px solid #b2c7e3; flex-shrink: 0; align-items: center;}
+        .contacts-header { background: #e3efff; padding: 5px 10px; font-size: 11px; font-weight: bold; color: #003366; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #b2c7e3; border-top: 1px solid #b2c7e3; flex-shrink: 0; gap: 5px; }
+        .btn-add-friend-top { background: #4caf50; color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 14px; line-height: 1; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; padding: 0; flex-shrink: 0; }
+        .btn-add-friend-top:hover { background: #388e3c; }
+        .btn-add-room { color: #4caf50; font-size: 16px; font-weight: bold; cursor: pointer; padding: 0 5px; }
+        .btn-add-room:hover { color: #388e3c; }
+
+        .search-wrap { padding: 4px 8px; background: #f0f5fc; border-bottom: 1px solid #d1e0f5; flex-shrink: 0; }
+        .search-input { width: 100%; padding: 4px 8px; border: 1px solid #99bce8; border-radius: 3px; font-size: 11px; box-sizing: border-box; outline: none; }
+        .search-input:focus { border-color: #4caf50; }
+        .sala-search-wrap { padding: 4px 8px; background: #f0f5fc; border-bottom: 1px solid #d1e0f5; flex-shrink: 0; }
+        .sala-search-input { width: 100%; padding: 4px 8px; border: 1px solid #99bce8; border-radius: 3px; font-size: 11px; box-sizing: border-box; outline: none; }
+        .sala-search-input:focus { border-color: #4caf50; }
+
         .contact-list { list-style: none; padding: 0; margin: 0; min-height: 40px; flex-shrink: 0; overflow-y: auto; }
         .contact-item { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; font-size: 12px; color: #333; display: flex; align-items: center; gap: 6px; cursor: pointer; }
         .contact-item:hover { background: #f0f5fc; }
@@ -71,15 +95,10 @@
         .btn-add-friend:hover { background: #388e3c; }
         .btn-remove-friend { background: transparent; color: #ccc; border: none; font-size: 14px; font-weight: bold; cursor: pointer; padding: 0 5px; margin-left: auto; }
         .contact-item:hover .btn-remove-friend { color: #e81123; }
-        .btn-add-room { color: #4caf50; font-size: 16px; font-weight: bold; cursor: pointer; padding: 0 5px; }
-        .btn-add-room:hover { color: #388e3c; }
         .btn-remove-room { background: transparent; color: #ccc; border: none; font-size: 12px; cursor: pointer; padding: 0 4px; }
         .contact-item:hover .btn-remove-room { color: #e81123; }
         .btn-edit-room { background: transparent; color: #ccc; border: none; font-size: 12px; cursor: pointer; padding: 0 4px; }
         .contact-item:hover .btn-edit-room { color: #f39c12; }
-        .sala-search-wrap { padding: 5px 8px; background: #f0f5fc; border-bottom: 1px solid #d1e0f5; flex-shrink: 0; }
-        .sala-search-input { width: 100%; padding: 5px 8px; border: 1px solid #99bce8; border-radius: 3px; font-size: 11px; box-sizing: border-box; outline: none; }
-        .sala-search-input:focus { border-color: #4caf50; }
 
         .status-icon { width: 10px; height: 10px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,0.2); flex-shrink: 0;}
         .status-online { background: #4caf50; } .status-ausente { background: #ffeb3b; } .status-ocupado { background: #f44336; } .status-invisivel { background: #bdc3c7; } .status-offline { background: #95a5a6; }
@@ -172,7 +191,7 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #loading-text { color: #003366; font-weight: bold; font-size: 14px; }
 
-        #modal-dedo, #modal-criar-sala, #modal-editar-sala { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        #modal-dedo, #modal-criar-sala, #modal-editar-sala, #modal-config, #modal-add-amigo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .modal-dedo-box { background: #f0f5fc; padding: 20px; border-radius: 6px; border: 1px solid #99bce8; width: 80%; max-width: 340px; text-align: center; }
         .modal-dedo-box h3 { margin: 0 0 12px 0; color: #003366; }
         .modal-dedo-box select, .modal-dedo-box input[type="text"], .modal-dedo-box input[type="password"] { width: 100%; padding: 8px; margin: 4px 0 10px 0; border: 1px solid #99bce8; border-radius: 4px; box-sizing: border-box; font-size: 13px; }
@@ -180,56 +199,19 @@
         .modal-dedo-box button { width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .btn-enviar-dedo { background: #e81123; color: white; }
         .btn-criar-sala { background: #4caf50; color: white; }
+        .btn-config { background: #3498db; color: white; }
+        .btn-add-friend-modal { background: #4caf50; color: white; }
         .btn-cancelar { background: #ccc; color: #333; }
         .sala-foto-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
         .sala-foto-preview { width: 64px; height: 64px; border-radius: 6px; object-fit: cover; border: 2px solid #99bce8; cursor: pointer; background: #fff; flex-shrink: 0; }
         .sala-foto-hint { font-size: 10px; color: #666; text-align: left; line-height: 1.3; }
 
-        /* ==================== OVERLAY PEIDO ==================== */
-        #peido-overlay {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.75);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 8888;
-            cursor: pointer;
-            animation: peidoFadeIn 0.3s ease-out;
-        }
-        .peido-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            max-width: 90%;
-            max-height: 90%;
-        }
-        #peido-video {
-            max-width: 100%;
-            max-height: 70vh;
-            border-radius: 12px;
-            box-shadow: 0 0 40px rgba(0,0,0,0.9), 0 0 20px rgba(76,175,80,0.6);
-            border: 3px solid #4caf50;
-        }
-        .peido-legenda {
-            color: #fff;
-            font-size: 18px;
-            font-weight: bold;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.9);
-            text-align: center;
-            padding: 0 10px;
-        }
-        .peido-hint {
-            color: rgba(255,255,255,0.6);
-            font-size: 10px;
-            font-style: italic;
-        }
-        @keyframes peidoFadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
+        #peido-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center; z-index: 8888; cursor: pointer; animation: peidoFadeIn 0.3s ease-out; }
+        .peido-wrapper { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 90%; max-height: 90%; }
+        #peido-video { max-width: 100%; max-height: 70vh; border-radius: 12px; box-shadow: 0 0 40px rgba(0,0,0,0.9), 0 0 20px rgba(76,175,80,0.6); border: 3px solid #4caf50; }
+        .peido-legenda { color: #fff; font-size: 18px; font-weight: bold; text-shadow: 0 2px 8px rgba(0,0,0,0.9); text-align: center; padding: 0 10px; }
+        .peido-hint { color: rgba(255,255,255,0.6); font-size: 10px; font-style: italic; }
+        @keyframes peidoFadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
         #toast-container { position: absolute; bottom: 20px; right: 20px; z-index: 9000; display: flex; flex-direction: column; gap: 10px; align-items: flex-end;}
         .toast { background: #333; color: white; padding: 6px 10px; border-radius: 6px; font-size: 11px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 6px; animation: slideIn 0.3s ease-out; border-left: 4px solid #4caf50; max-width: 220px; }
@@ -255,6 +237,11 @@
         @media (max-width: 850px) {
             body { align-items: flex-start; }
             .msn-window { width: 100%; height: 100dvh; border-radius: 0; border: none; }
+            .title-bar { padding: 0 5px; gap: 4px; }
+            .title-text { font-size: 11px; gap: 4px; }
+            .title-text img { height: 20px; }
+            .top-tab { padding: 3px 8px; font-size: 11px; }
+            .tab-label { display: none; }
             .main-area { flex-direction: column; min-height: 0; }
             .sidebar { width: 100%; height: 30%; max-height: 200px; border-right: none; border-bottom: 2px solid #99bce8; flex-shrink: 0; overflow-y: auto; }
             .user-profile { padding: 5px; display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; }
@@ -292,6 +279,11 @@
             #peido-video { max-height: 55vh; }
             .peido-legenda { font-size: 14px; }
         }
+
+        @media (max-width: 500px) {
+            .title-text .title-name { display: none; }
+            .top-tab { padding: 4px 8px; font-size: 13px; }
+        }
     </style>
 </head>
 <body>
@@ -315,7 +307,12 @@
         <div class="title-bar">
             <div class="title-text">
                 <img class="logo-magica" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10" alt="MSN Logo">
-                MSM GLOBAL
+                <span class="title-name">MSM GLOBAL</span>
+            </div>
+            <div class="top-tabs">
+                <button class="top-tab" id="tab-btn-amigos" onclick="mudarAbaTop('amigos')">👥 <span class="tab-label">Amigos</span></button>
+                <button class="top-tab" id="tab-btn-salas" onclick="mudarAbaTop('salas')">🏠 <span class="tab-label">Salas</span></button>
+                <button class="top-tab active" id="tab-btn-global" onclick="mudarAbaTop('global')">🌐 <span class="tab-label">Global</span></button>
             </div>
             <div class="window-controls">
                 <button id="btn-admin" class="btn-admin-painel hidden" onclick="abrirPainelAdmin()">🛡️ Painel</button>
@@ -334,6 +331,7 @@
                     <div class="user-info-mobile">
                         <div class="user-name-display">
                             <span id="my-name-display" class="user-name-edit" title="Clique para alterar" onclick="editarNomeExibicao()">...</span>
+                            <span class="gear-icon" title="Configurações" onclick="abrirConfiguracoes()">⚙️</span>
                             <button class="btn-sair" onclick="fazerLogout()">Sair</button>
                         </div>
                         <select id="my-status" class="status-selector" onchange="mudarStatus(this.value)">
@@ -346,27 +344,40 @@
                     </div>
                 </div>
 
-                <div class="contacts-header">
-                    <span>Meus Contatos</span>
+                <div id="view-amigos" class="sidebar-view hidden">
+                    <div class="contacts-header">
+                        <span>Meus Amigos</span>
+                        <span class="btn-add-friend-top" onclick="abrirAddAmigo()" title="Adicionar amigo">+</span>
+                    </div>
+                    <div class="search-wrap">
+                        <input type="text" class="search-input" id="friends-search" placeholder="🔍 Buscar em amigos..." oninput="renderizarListas()">
+                    </div>
+                    <ul class="contact-list" id="my-friends-list"></ul>
+                    <div id="btn-mais-amigos" class="btn-ver-mais hidden" onclick="toggleAmigos()"></div>
                 </div>
-                <ul class="contact-list" id="my-friends-list"></ul>
-                <div id="btn-mais-amigos" class="btn-ver-mais hidden" onclick="toggleAmigos()"></div>
 
-                <div class="contacts-header">
-                    <span>MSM Global (Todos)</span>
-                    <span id="online-count">(0)</span>
+                <div id="view-salas" class="sidebar-view hidden">
+                    <div class="contacts-header">
+                        <span>🏠 Salas</span>
+                        <span class="btn-add-room" onclick="abrirCriarSala()" title="Criar nova sala">➕</span>
+                    </div>
+                    <div class="sala-search-wrap">
+                        <input type="text" class="sala-search-input" id="sala-search" placeholder="🔍 Buscar sala..." oninput="renderizarSalas()">
+                    </div>
+                    <ul class="contact-list" id="rooms-list"></ul>
                 </div>
-                <ul class="contact-list" id="global-list"></ul>
-                <div id="btn-mais-global" class="btn-ver-mais hidden" onclick="toggleGlobal()"></div>
 
-                <div class="contacts-header">
-                    <span>🏠 Salas</span>
-                    <span class="btn-add-room" onclick="abrirCriarSala()" title="Criar nova sala">➕</span>
+                <div id="view-global" class="sidebar-view">
+                    <div class="contacts-header">
+                        <span>MSM Global (Todos)</span>
+                        <span id="online-count">(0)</span>
+                    </div>
+                    <div class="search-wrap">
+                        <input type="text" class="search-input" id="global-search" placeholder="🔍 Buscar usuário..." oninput="renderizarListas()">
+                    </div>
+                    <ul class="contact-list" id="global-list"></ul>
+                    <div id="btn-mais-global" class="btn-ver-mais hidden" onclick="toggleGlobal()"></div>
                 </div>
-                <div class="sala-search-wrap">
-                    <input type="text" class="sala-search-input" id="sala-search" placeholder="🔍 Buscar sala..." oninput="renderizarSalas()">
-                </div>
-                <ul class="contact-list" id="rooms-list"></ul>
             </div>
 
             <div class="chat-area">
@@ -516,6 +527,32 @@
             </div>
         </div>
 
+        <div id="modal-config" class="hidden">
+            <div class="modal-dedo-box">
+                <h3>⚙️ Configurações</h3>
+                <p style="font-size:11px; color:#666; margin:0 0 12px 0;">Alterar Senha</p>
+                <label>Senha atual:</label>
+                <input type="password" id="senha-atual" placeholder="Digite sua senha atual">
+                <label>Nova senha (mín. 6):</label>
+                <input type="password" id="senha-nova" placeholder="Digite a nova senha">
+                <label>Confirmar nova senha:</label>
+                <input type="password" id="senha-confirma" placeholder="Repita a nova senha">
+                <div id="senha-erro" class="msg-erro"></div>
+                <button class="btn-config" onclick="alterarSenha()">Alterar Senha</button>
+                <button class="btn-cancelar" onclick="fecharConfiguracoes()">Cancelar</button>
+            </div>
+        </div>
+
+        <div id="modal-add-amigo" class="hidden">
+            <div class="modal-dedo-box">
+                <h3>➕ Adicionar Amigo</h3>
+                <p style="font-size:11px; color:#666; margin:0 0 10px 0;">Digite o apelido ou e-mail do usuário</p>
+                <input type="text" id="add-friend-input" placeholder="Apelido ou e-mail" maxlength="50">
+                <button class="btn-add-friend-modal" onclick="buscarEAdicionarAmigo()">Adicionar</button>
+                <button class="btn-cancelar" onclick="fecharAddAmigo()">Cancelar</button>
+            </div>
+        </div>
+
         <div id="modal-admin" class="hidden">
             <div class="admin-box">
                 <h2>🛡️ Painel de Moderação</h2>
@@ -602,7 +639,43 @@
         const audioPromocaoAdm = document.getElementById('som-promocao-adm');
         const audioAlertaAdm = document.getElementById('som-alerta-adm');
 
-        function tocarAudio(el) { if (!el) return; try { el.pause(); el.currentTime = 0; el.play().catch(()=>{}); } catch(e){} }
+        let audioDesbloqueado = false;
+
+        function desbloquearTodosAudios() {
+            if (audioDesbloqueado) return;
+            const lista = [audioLogin, audioAlerta, audioEnvio, audioEnvioRemetente, audioPeido, audioOnline, audioPromocaoAdm, audioAlertaAdm];
+            let sucesso = false;
+            lista.forEach(a => {
+                if (!a) return;
+                try {
+                    const volOrig = a.volume, mutedOrig = a.muted;
+                    a.volume = 0; a.muted = true;
+                    const p = a.play();
+                    if (p !== undefined) {
+                        p.then(() => { sucesso = true; a.pause(); a.currentTime = 0; a.volume = volOrig; a.muted = mutedOrig; })
+                         .catch(() => { a.volume = volOrig; a.muted = mutedOrig; });
+                    }
+                } catch (e) {}
+            });
+            if (sucesso) { audioDesbloqueado = true; console.log("[Áudio] ✅ Desbloqueado"); }
+        }
+
+        document.addEventListener('click', desbloquearTodosAudios);
+        document.addEventListener('touchstart', desbloquearTodosAudios, { passive: true });
+        document.addEventListener('keydown', desbloquearTodosAudios);
+
+        function tocarAudio(el) {
+            if (!el) return;
+            try {
+                el.pause(); el.currentTime = 0;
+                const p = el.play();
+                if (p !== undefined) p.catch(e => {
+                    console.warn("[Áudio] Bloqueado:", el.id, "—", e.name);
+                    if (e.name === 'NotAllowedError' && !audioDesbloqueado) desbloquearTodosAudios();
+                });
+            } catch (e) { console.warn("[Áudio] Erro:", el.id, e); }
+        }
+
         function mostrarLoading(t) { document.getElementById('loading-text').innerText = t; document.getElementById('loading-screen').classList.remove('hidden'); }
         function esconderLoading() { document.getElementById('loading-screen').classList.add('hidden'); }
 
@@ -630,45 +703,178 @@
         /* ==================== ANIMAÇÃO PEIDO ==================== */
         let timerPeido = null;
 
-function abrirPeidoOverlay(nomeAutor) {
-    const overlay = document.getElementById('peido-overlay');
-    const video = document.getElementById('peido-video');
-    const legenda = document.getElementById('peido-legenda');
-    if (!overlay || !video) return;
+        function abrirPeidoOverlay(nomeAutor) {
+            const overlay = document.getElementById('peido-overlay');
+            const video = document.getElementById('peido-video');
+            const legenda = document.getElementById('peido-legenda');
+            if (!overlay || !video) return;
 
-    legenda.innerText = `💨 ${nomeAutor} soltou um peido!`;
-    overlay.classList.remove('hidden');
+            legenda.innerText = `💨 ${nomeAutor} soltou um peido!`;
+            overlay.classList.remove('hidden');
 
-    try {
-        video.currentTime = 0;
-        video.muted = false;
-        video.volume = 1;
-        video.loop = true;
-        const playPromise = video.play();
-        // Fallback caso o navegador bloqueie autoplay COM som
-        if (playPromise !== undefined) {
-            playPromise.catch(err => {
-                console.log("[Peido] Autoplay com som bloqueado, usando fallback mutado + áudio:", err);
-                video.muted = true;
-                video.play().catch(()=>{});
-                tocarAudio(audioPeido);
-            });
+            try {
+                video.currentTime = 0;
+                video.muted = false;
+                video.volume = 1;
+                video.loop = true;
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(err => {
+                        console.log("[Peido] Autoplay com som bloqueado, fallback mutado + áudio:", err);
+                        video.muted = true;
+                        video.play().catch(()=>{});
+                        tocarAudio(audioPeido);
+                    });
+                }
+            } catch (e) {}
+
+            clearTimeout(timerPeido);
+            timerPeido = setTimeout(() => fecharPeidoOverlay(), 5000);
         }
-    } catch (e) {}
 
-    clearTimeout(timerPeido);
-    timerPeido = setTimeout(() => fecharPeidoOverlay(), 8600); // ← 5 segundos
-}
+        function fecharPeidoOverlay() {
+            const overlay = document.getElementById('peido-overlay');
+            const video = document.getElementById('peido-video');
+            if (overlay) overlay.classList.add('hidden');
+            if (video) { try { video.pause(); video.currentTime = 0; video.muted = false; video.loop = false; } catch (e) {} }
+            clearTimeout(timerPeido);
+        }
 
-function fecharPeidoOverlay() {
-    const overlay = document.getElementById('peido-overlay');
-    const video = document.getElementById('peido-video');
-    if (overlay) overlay.classList.add('hidden');
-    if (video) {
-        try { video.pause(); video.currentTime = 0; video.muted = false; video.loop = false; } catch (e) {}
-    }
-    clearTimeout(timerPeido);
-}
+        /* ==================== PRESENÇA (FIX OFFLINE MOBILE) ==================== */
+        function restaurarPresenca() {
+            if (!meuId || !meuStatus || !firebaseReady) return;
+            const stRestore = (meuStatus === 'offline') ? 'online' : meuStatus;
+            console.log("[Aba] Restaurando status:", stRestore);
+            update(ref(db, 'users/' + meuId), { status: stRestore, digitando: false });
+            onDisconnect(ref(db, 'users/' + meuId)).update({ status: 'offline', digitando: false });
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                restaurarPresenca();
+                audioDesbloqueado = false;
+                desbloquearTodosAudios();
+            }
+        });
+        window.addEventListener('pageshow', (e) => { if (e.persisted) restaurarPresenca(); });
+        window.addEventListener('online', () => restaurarPresenca());
+
+        /* ==================== ABAS DO TOPO ==================== */
+        function mudarAbaTop(tipo) {
+            const va = document.getElementById('view-amigos');
+            const vs = document.getElementById('view-salas');
+            const vg = document.getElementById('view-global');
+            const ba = document.getElementById('tab-btn-amigos');
+            const bs = document.getElementById('tab-btn-salas');
+            const bg = document.getElementById('tab-btn-global');
+
+            va.classList.add('hidden');
+            vs.classList.add('hidden');
+            vg.classList.add('hidden');
+            ba.classList.remove('active');
+            bs.classList.remove('active');
+            bg.classList.remove('active');
+
+            if (tipo === 'amigos') { va.classList.remove('hidden'); ba.classList.add('active'); }
+            else if (tipo === 'salas') { vs.classList.remove('hidden'); bs.classList.add('active'); }
+            else { vg.classList.remove('hidden'); bg.classList.add('active'); }
+        }
+
+        /* ==================== CONFIGURAÇÕES ==================== */
+        function abrirConfiguracoes() {
+            document.getElementById('modal-config').classList.remove('hidden');
+            document.getElementById('senha-atual').value = '';
+            document.getElementById('senha-nova').value = '';
+            document.getElementById('senha-confirma').value = '';
+            document.getElementById('senha-erro').style.display = 'none';
+        }
+        function fecharConfiguracoes() { document.getElementById('modal-config').classList.add('hidden'); }
+
+        async function alterarSenha() {
+            const senhaAtual = document.getElementById('senha-atual').value;
+            const senhaNova = document.getElementById('senha-nova').value;
+            const senhaConfirma = document.getElementById('senha-confirma').value;
+            const err = document.getElementById('senha-erro');
+            err.style.display = 'none';
+
+            if (!senhaAtual || !senhaNova || !senhaConfirma) { err.innerText = "Preencha todos os campos."; err.style.display = 'block'; return; }
+            if (senhaNova.length < 6) { err.innerText = "Senha nova precisa ter no mínimo 6 caracteres."; err.style.display = 'block'; return; }
+            if (senhaNova !== senhaConfirma) { err.innerText = "As senhas novas não coincidem."; err.style.display = 'block'; return; }
+            if (senhaAtual === senhaNova) { err.innerText = "A nova senha deve ser diferente da atual."; err.style.display = 'block'; return; }
+
+            mostrarLoading("Alterando senha...");
+            try {
+                const user = auth.currentUser;
+                if (!user || !user.email) throw new Error("Usuário não autenticado");
+                const credential = window.EmailAuthProvider.credential(user.email, senhaAtual);
+                await window.reauthenticateWithCredential(user, credential);
+                await window.updatePassword(user, senhaNova);
+                esconderLoading();
+                alert("✅ Senha alterada com sucesso!");
+                fecharConfiguracoes();
+            } catch (e) {
+                esconderLoading();
+                if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') err.innerText = "Senha atual incorreta.";
+                else if (e.code === 'auth/weak-password') err.innerText = "Senha muito fraca.";
+                else if (e.code === 'auth/requires-recent-login') err.innerText = "Faça login novamente para alterar a senha.";
+                else err.innerText = "Erro: " + e.message;
+                err.style.display = 'block';
+            }
+        }
+
+        /* ==================== ADICIONAR AMIGO ==================== */
+        function abrirAddAmigo() {
+            document.getElementById('modal-add-amigo').classList.remove('hidden');
+            document.getElementById('add-friend-input').value = '';
+        }
+        function fecharAddAmigo() { document.getElementById('modal-add-amigo').classList.add('hidden'); }
+
+        async function buscarEAdicionarAmigo() {
+            const termo = document.getElementById('add-friend-input').value.trim();
+            if (!termo) return alert("Digite um apelido ou e-mail.");
+            if (termo.length < 2) return alert("Mínimo 2 caracteres.");
+
+            mostrarLoading("Buscando...");
+            try {
+                let uidEncontrado = null, nomeEncontrado = null;
+                const termoLimpo = termo.toLowerCase().replace(/\s+/g, '');
+                const snapNick = await get(ref(db, 'nicknames/' + termoLimpo));
+                if (snapNick.exists() && snapNick.val().uid) {
+                    uidEncontrado = snapNick.val().uid;
+                    nomeEncontrado = termoLimpo;
+                }
+
+                if (!uidEncontrado) {
+                    const snapUsers = await get(ref(db, 'users'));
+                    if (snapUsers.exists()) {
+                        const todos = snapUsers.val();
+                        const termoLower = termo.toLowerCase();
+                        for (const uid in todos) {
+                            const u = todos[uid];
+                            if ((u.email && u.email.toLowerCase() === termoLower) ||
+                                (u.nome && u.nome.toLowerCase() === termoLower)) {
+                                uidEncontrado = uid;
+                                nomeEncontrado = u.nome;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                esconderLoading();
+
+                if (!uidEncontrado) return alert("Usuário não encontrado.");
+                if (uidEncontrado === meuId) return alert("Você não pode adicionar a si mesmo.");
+                if (meusAmigos[uidEncontrado]) return alert(`"${nomeEncontrado}" já está nos seus contatos.`);
+
+                await set(ref(db, 'friends/' + meuId + '/' + uidEncontrado), true);
+                mostrarToastCustom(`✅ <strong>${nomeEncontrado}</strong> adicionado!`, '#4caf50');
+                fecharAddAmigo();
+            } catch (e) {
+                esconderLoading();
+                alert("Erro: " + e.message);
+            }
+        }
 
         /* ==================== BOOT ==================== */
         window.addEventListener('firebaseReady', () => {
@@ -696,8 +902,7 @@ function fecharPeidoOverlay() {
                             if (!sessaoIniciada) {
                                 meuId = user.uid;
                                 meuNome = user.email ? user.email.split('@')[0] : "Usuário";
-                                esconderLoading();
-                                iniciarSessao();
+                                esconderLoading(); iniciarSessao();
                             }
                         }, 4000);
 
@@ -731,9 +936,7 @@ function fecharPeidoOverlay() {
                                     } else {
                                         meuId = user.uid;
                                         meuNome = user.email ? user.email.split('@')[0] : "Usuário";
-                                        meuCargo = 'user';
-                                        meuStatus = 'online';
-                                        meuRecado = 'Disponível';
+                                        meuCargo = 'user'; meuStatus = 'online'; meuRecado = 'Disponível';
                                     }
 
                                     const dados = { nome: meuNome, status: meuStatus, recado: meuRecado, foto: minhaFoto, fingerprint: minhaFingerprint };
@@ -744,8 +947,7 @@ function fecharPeidoOverlay() {
                                     document.getElementById('my-recado').value = meuRecado;
                                     document.getElementById('my-avatar-img').src = minhaFoto;
                                     if (meuCargo !== 'user') document.getElementById('btn-admin').classList.remove('hidden');
-                                    esconderLoading();
-                                    iniciarSessao();
+                                    esconderLoading(); iniciarSessao();
                                 }
                             }).catch(() => {
                                 clearTimeout(timeoutPerfil);
@@ -777,6 +979,14 @@ function fecharPeidoOverlay() {
             salvarPerfilNoBanco();
             onDisconnect(ref(db, 'users/' + meuId)).update({ status: 'offline', digitando: false });
             configurarKickListener();
+
+            let ultimoEstadoConexao = null;
+            onValue(ref(db, '.info/connected'), (snap) => {
+                const conectado = snap.val() === true;
+                if (ultimoEstadoConexao === false && conectado === true) restaurarPresenca();
+                ultimoEstadoConexao = conectado;
+            });
+
             isInitialLoad = true;
             setTimeout(() => { isInitialLoad = false; tocarAudio(audioLogin); }, 1000);
 
@@ -788,10 +998,8 @@ function fecharPeidoOverlay() {
                     if (d.cargo && d.cargo !== meuCargo) {
                         const antigo = meuCargo;
                         meuCargo = d.cargo;
-                        if (meuCargo === 'user') {
-                            document.getElementById('btn-admin').classList.add('hidden');
-                            document.getElementById('modal-admin').classList.add('hidden');
-                        } else document.getElementById('btn-admin').classList.remove('hidden');
+                        if (meuCargo === 'user') { document.getElementById('btn-admin').classList.add('hidden'); document.getElementById('modal-admin').classList.add('hidden'); }
+                        else document.getElementById('btn-admin').classList.remove('hidden');
                         if (!isInitialLoad) {
                             const ganhou = (PERMISSOES[meuCargo] || []).length > (PERMISSOES[antigo] || []).length;
                             mostrarToastCustom(ganhou ? '⭐ Cargo atualizado: <strong>' + meuCargo.toUpperCase() + '</strong>' : '⚠️ Cargo: <strong>' + meuCargo.toUpperCase() + '</strong>', ganhou ? '#f1c40f' : '#e67e22');
@@ -820,7 +1028,6 @@ function fecharPeidoOverlay() {
                         document.getElementById('digitando-aviso').style.display = usuariosOnline[idOutro].digitando === true ? 'block' : 'none';
                     }
                 }
-
                 if (!document.getElementById('modal-admin').classList.contains('hidden')) renderizarListaAdmin();
             });
 
@@ -1188,16 +1395,10 @@ function fecharPeidoOverlay() {
         function fecharCriarSala() { document.getElementById('modal-criar-sala').classList.add('hidden'); }
 
         function processarFotoSalaCriacao(ev) {
-            processarImagemQuadrada(ev, base64 => {
-                fotoSalaCriacao = base64;
-                document.getElementById('criar-sala-foto-preview').src = base64;
-            });
+            processarImagemQuadrada(ev, base64 => { fotoSalaCriacao = base64; document.getElementById('criar-sala-foto-preview').src = base64; });
         }
         function processarFotoSalaEdicao(ev) {
-            processarImagemQuadrada(ev, base64 => {
-                fotoSalaEdicao = base64;
-                document.getElementById('editar-sala-foto-preview').src = base64;
-            });
+            processarImagemQuadrada(ev, base64 => { fotoSalaEdicao = base64; document.getElementById('editar-sala-foto-preview').src = base64; });
         }
 
         function processarImagemQuadrada(ev, callback) {
@@ -1245,15 +1446,12 @@ function fecharPeidoOverlay() {
                 mostrarToastCustom(`🎉 Sala <strong>${nome}</strong> criada!`, '#4caf50');
                 fecharCriarSala();
                 abrirAbaSala(roomId, nome);
-            } catch (e) {
-                alert('Erro ao criar sala: ' + e.message);
-            }
+            } catch (e) { alert('Erro ao criar sala: ' + e.message); }
         }
 
         async function entrarSala(roomId) {
             const sala = salasConhecidas[roomId];
             if (!sala) return;
-
             if (isAdminCargo(meuCargo) || sala.idCriador === meuId) { abrirAbaSala(roomId, sala.nome); return; }
             if (salaMembros[roomId] && salaMembros[roomId][meuId]) { abrirAbaSala(roomId, sala.nome); return; }
 
@@ -1287,7 +1485,6 @@ function fecharPeidoOverlay() {
             if (!sala) return;
             if (!isAdminCargo(meuCargo) && sala.idCriador !== meuId) return alert('Sem permissão.');
             if (!confirm(`Excluir "${sala.nome}"?`)) return;
-
             try {
                 await remove(ref(db, 'room_messages/' + roomId));
                 await remove(ref(db, 'room_members/' + roomId));
@@ -1313,8 +1510,7 @@ function fecharPeidoOverlay() {
 
         function fecharEditarSala() {
             document.getElementById('modal-editar-sala').classList.add('hidden');
-            salaEditandoId = null;
-            fotoSalaEdicao = '';
+            salaEditandoId = null; fotoSalaEdicao = '';
         }
 
         async function salvarEdicaoSala() {
@@ -1324,16 +1520,12 @@ function fecharPeidoOverlay() {
             const nome = document.getElementById('editar-sala-nome').value.trim();
             const bio = document.getElementById('editar-sala-bio').value.trim();
             if (!nome) return alert('Nome não pode ficar vazio.');
-
             const upd = { nome, bio: bio || '', foto: fotoSalaEdicao || '' };
-
             try {
                 await update(ref(db, 'rooms/' + salaEditandoId), upd);
                 mostrarToastCustom(`✅ Sala atualizada!`, '#4caf50');
                 fecharEditarSala();
-            } catch (e) {
-                alert('Erro: ' + e.message);
-            }
+            } catch (e) { alert('Erro: ' + e.message); }
         }
 
         function renderizarSalas() {
@@ -1403,10 +1595,15 @@ function fecharPeidoOverlay() {
         function renderizarListas() {
             const gl = document.getElementById('global-list'), fl = document.getElementById('my-friends-list');
             const bmA = document.getElementById('btn-mais-amigos'), bmG = document.getElementById('btn-mais-global');
+            if (!gl || !fl) return;
             gl.innerHTML = ''; fl.innerHTML = '';
             bmA.classList.add('hidden'); bmG.classList.add('hidden');
 
-            let count = 0; const listaG = [], listaF = [];
+            const termF = (document.getElementById('friends-search')?.value || '').toLowerCase().trim();
+            const termG = (document.getElementById('global-search')?.value || '').toLowerCase().trim();
+
+            let count = 0;
+            let listaG = [], listaF = [];
             if (usuariosOnline) {
                 Object.keys(usuariosOnline).forEach(key => {
                     const u = usuariosOnline[key];
@@ -1418,11 +1615,18 @@ function fecharPeidoOverlay() {
                     }
                 });
             }
+
+            if (termF) listaF = listaF.filter(it => (it.user.nome || '').toLowerCase().includes(termF));
+            if (termG) listaG = listaG.filter(it => (it.user.nome || '').toLowerCase().includes(termG));
+
             const ord = (a, b) => (a.user.status === 'offline' && b.user.status !== 'offline') ? 1 : (a.user.status !== 'offline' && b.user.status === 'offline') ? -1 : 0;
             listaG.sort(ord); listaF.sort(ord);
 
-            if (listaF.length === 0) fl.innerHTML = '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Clique no + na lista Global.</li>';
-            else {
+            if (listaF.length === 0) {
+                fl.innerHTML = termF
+                    ? '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Nenhum amigo encontrado.</li>'
+                    : '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Clique no + para adicionar um amigo.</li>';
+            } else {
                 const exib = expandirAmigos ? listaF : listaF.slice(0, LIMITE_LISTA);
                 exib.forEach(item => {
                     const isOff = item.user.status === 'offline';
@@ -1455,12 +1659,15 @@ function fecharPeidoOverlay() {
                             <strong style="${isMeu ? 'color:#003366;' : ''}">${nome}</strong>
                             <span style="font-size:10px; color:#666;">${item.user.recado || ''} ${isOff && !isMeu ? '(Offline)' : ''}</span>
                         </div>
-                        ${(!meusAmigos[item.key] && !isMeu) ? `<button class="btn-add-friend" onclick="adicionarAmigo('${item.key}', event)">+</button>` : ''}
+                        ${(!meusAmigos[item.key] && !isMeu) ? `<button class="btn-add-friend" onclick="adicionarAmigo('${item.key}', event)" title="Adicionar aos amigos">+</button>` : ''}
                     `;
                     gl.appendChild(li);
                 });
                 if (listaG.length > LIMITE_LISTA) { bmG.classList.remove('hidden'); bmG.innerText = expandirGlobal ? `Ver menos ▲` : `Ver mais (${listaG.length - LIMITE_LISTA}) ▼`; }
+            } else if (termG) {
+                gl.innerHTML = '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Nenhum usuário encontrado.</li>';
             }
+
             document.getElementById('online-count').innerText = `(${count})`;
         }
 
@@ -1752,9 +1959,9 @@ function fecharPeidoOverlay() {
             if (lastId && lastId !== ultimaMsgId) {
                 const msg = arr[arr.length - 1], isMeu = msg.idAutor === meuId;
                 if (!isFirst && (idAba === 'global' || msg.idAlvo === meuId || idAba.startsWith('sala_'))) {
-	if (msg.tipo === 'peido') {
-    	if (!isMeu) abrirPeidoOverlay(msg.autor);
-	}
+                    if (msg.tipo === 'peido') {
+                        if (!isMeu) abrirPeidoOverlay(msg.autor);
+                    }
                     else if (msg.tipo === 'nudge') { tocarAudio(audioAlerta); document.getElementById('msn-window').classList.add('nudge-animation'); setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500); }
                     else if (!isMeu) {
                         if (msg.tipo === 'texto' || msg.tipo === 'imagem') tocarAudio(audioEnvio);
@@ -1793,10 +2000,10 @@ function fecharPeidoOverlay() {
                     if (latest.tipo === 'texto') { tocarAudio(audioEnvio); mostrarPopupPM(nomeOutro, formatarTexto(latest.texto), cidNorm); }
                     else if (latest.tipo === 'imagem') { tocarAudio(audioEnvio); mostrarPopupPM(nomeOutro, "📷 Enviou uma foto", cidNorm); }
                     else if (latest.tipo === 'nudge') { tocarAudio(audioAlerta); document.getElementById('msn-window').classList.add('nudge-animation'); setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500); mostrarPopupPM(nomeOutro, "🔔 Te chamou atenção!", cidNorm); }
-               else if (latest.tipo === 'peido') {
-    abrirPeidoOverlay(nomeOutro);
-    mostrarPopupPM(nomeOutro, "💨 Soltou um peido!", cidNorm);
-}
+                    else if (latest.tipo === 'peido') {
+                        abrirPeidoOverlay(nomeOutro);
+                        mostrarPopupPM(nomeOutro, "💨 Soltou um peido!", cidNorm);
+                    }
                     else if (latest.tipo === 'dedo') { tocarAudio(audioAlerta); document.getElementById('msn-window').classList.add('nudge-animation'); setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500); mostrarPopupPM(nomeOutro, "🖕 Te mandou um dedo!", cidNorm); }
                 });
             });
