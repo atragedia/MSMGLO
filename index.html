@@ -213,6 +213,44 @@
         .peido-hint { color: rgba(255,255,255,0.6); font-size: 10px; font-style: italic; }
         @keyframes peidoFadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
+        /* ==================== DAMAS ==================== */
+        #modal-desafiar-dama, #modal-receber-desafio, #modal-dama-jogo {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center;
+            z-index: 6500;
+        }
+        .dama-box { background: #2c3e50; border: 2px solid #f1c40f; border-radius: 8px; width: 780px; max-width: 95%; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+        .dama-header { background: linear-gradient(to bottom, #d1e0f5, #a7c8f0); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; color: #003366; font-weight: bold; font-size: 14px; }
+        .dama-close { background: #e81123; color: white; border: none; border-radius: 3px; width: 22px; height: 22px; font-weight: bold; cursor: pointer; }
+        .dama-info-bar { background: #34495e; padding: 6px 12px; display: flex; justify-content: space-between; font-size: 12px; color: white; border-bottom: 1px solid #2c3e50; }
+        .dama-content { display: flex; flex: 1; min-height: 0; overflow: hidden; background: #1a252f; }
+        .dama-board-wrap { position: relative; flex-shrink: 0; padding: 10px; display: flex; justify-content: center; align-items: center; }
+        #dama-canvas { background: #f0d9b5; border-radius: 4px; box-shadow: 0 0 15px rgba(0,0,0,0.5); cursor: pointer; max-width: 100%; height: auto; }
+        .dama-side { flex: 1; display: flex; flex-direction: column; background: #ecf0f1; min-width: 0; }
+        .dama-players { display: flex; flex-direction: column; gap: 3px; padding: 6px; background: #bdc3c7; }
+        .dama-player { font-size: 11px; padding: 4px 8px; border-radius: 3px; background: white; display: flex; justify-content: space-between; align-items: center; }
+        .dama-player.ativo { background: #ffeaa7; font-weight: bold; border: 2px solid #f39c12; }
+        .dama-chat { flex: 1; overflow-y: auto; padding: 8px; font-size: 12px; display: flex; flex-direction: column; gap: 4px; min-height: 80px; }
+        .dama-chat .dm { padding: 3px 6px; border-radius: 4px; word-wrap: break-word; }
+        .dama-chat .dm.sys { text-align: center; font-style: italic; color: #7f8c8d; font-size: 10px; }
+        .dama-chat .dm.me { background: #dcf8c6; align-self: flex-end; max-width: 85%; }
+        .dama-chat .dm.other { background: #f0f5fc; align-self: flex-start; max-width: 85%; }
+        .dama-chat .dm .au { font-weight: bold; font-size: 10px; color: #003366; }
+        .dama-chat-input-row { display: flex; gap: 4px; padding: 6px; background: #bdc3c7; border-top: 1px solid #95a5a6; }
+        .dama-chat-input-row input { flex: 1; padding: 6px 8px; border: 1px solid #95a5a6; border-radius: 3px; font-size: 12px; }
+        .dama-chat-input-row button { padding: 6px 12px; background: #4caf50; color: white; border: none; border-radius: 3px; font-weight: bold; cursor: pointer; }
+
+        @media (max-width: 850px) {
+            .dama-box { width: 100%; height: 100dvh; max-height: 100vh; border-radius: 0; }
+            .dama-content { flex-direction: column; }
+            .dama-board-wrap { padding: 5px; }
+            #dama-canvas { width: 260px; height: 260px; }
+            .dama-side { flex-direction: row; height: 45%; min-height: 0; }
+            .dama-players { flex-direction: column; width: 110px; flex-shrink: 0; }
+            .dama-chat { font-size: 11px; }
+            .dama-chat-input-row input { font-size: 14px; }
+        }
+
         #toast-container { position: absolute; bottom: 20px; right: 20px; z-index: 9000; display: flex; flex-direction: column; gap: 10px; align-items: flex-end;}
         .toast { background: #333; color: white; padding: 6px 10px; border-radius: 6px; font-size: 11px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 6px; animation: slideIn 0.3s ease-out; border-left: 4px solid #4caf50; max-width: 220px; }
         .toast.offline-toast { border-left-color: #95a5a6; }
@@ -398,6 +436,7 @@
                         <button title="Nudge" onclick="enviarNudge()">🔔 Nudge</button>
                         <button title="Peido" onclick="enviarPeido()">💨 Peido</button>
                         <button title="Dedo" onclick="abrirSeletorDedo()" style="color: #e81123; font-weight: bold;">🖕 Dedo</button>
+                        <button title="Desafiar para Damas" onclick="abrirDesafiarDama()">♟️ Damas</button>
                         <button onclick="adicionarEmoji('😊')">😊</button>
                         <button onclick="adicionarEmoji('😂')">😂</button>
                         <button onclick="adicionarEmoji('❤️')">❤️</button>
@@ -582,6 +621,56 @@
             </div>
         </div>
 
+        <!-- ==================== DAMAS ==================== -->
+        <div id="modal-desafiar-dama" class="hidden">
+            <div class="modal-dedo-box">
+                <h3>♟️ Desafiar para Damas</h3>
+                <p style="font-size:11px; color:#666; margin:0 0 10px 0;">Escolha um usuário online</p>
+                <select id="dama-select-adversario"></select>
+                <button class="btn-add-friend-modal" onclick="enviarDesafioDama()">Enviar Desafio</button>
+                <button class="btn-cancelar" onclick="fecharDesafiarDama()">Cancelar</button>
+            </div>
+        </div>
+
+        <div id="modal-receber-desafio" class="hidden">
+            <div class="modal-dedo-box">
+                <h3>🎯 Desafio de Damas!</h3>
+                <p style="font-size:12px; color:#333; margin:10px 0;"><strong id="desafio-nome-autor">Alguém</strong> te desafiou para uma partida de damas!</p>
+                <button class="btn-add-friend-modal" onclick="aceitarDesafioDama()">✅ Aceitar</button>
+                <button class="btn-cancelar" style="background:#e81123; color:white;" onclick="recusarDesafioDama()">❌ Recusar</button>
+            </div>
+        </div>
+
+        <div id="modal-dama-jogo" class="hidden">
+            <div class="dama-box">
+                <div class="dama-header">
+                    <strong id="dama-titulo-partida">♟️ Damas</strong>
+                    <button class="dama-close" onclick="fecharJogoDama()">X</button>
+                </div>
+                <div class="dama-info-bar">
+                    <span id="dama-info-vez" style="font-weight:bold; color:#e67e22;"></span>
+                    <span id="dama-info-timer" style="font-weight:bold; color:#e81123;"></span>
+                </div>
+                <div class="dama-content">
+                    <div class="dama-board-wrap">
+                        <canvas id="dama-canvas" width="320" height="320"></canvas>
+                        <div id="dama-vencedor" class="hidden" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.85); color:#fff; padding:15px 25px; border-radius:8px; font-weight:bold; font-size:16px; text-align:center; z-index:10;"></div>
+                    </div>
+                    <div class="dama-side">
+                        <div class="dama-players">
+                            <div id="dama-p1-info" class="dama-player"></div>
+                            <div id="dama-p2-info" class="dama-player"></div>
+                        </div>
+                        <div class="dama-chat" id="dama-chat"></div>
+                        <div class="dama-chat-input-row">
+                            <input type="text" id="dama-chat-input" maxlength="80" placeholder="Mensagem no chat da partida..." onkeypress="if(event.key==='Enter')enviarMensagemChatDama()">
+                            <button onclick="enviarMensagemChatDama()">➤</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="toast-container"></div>
     </div>
 
@@ -639,47 +728,30 @@
         const audioPromocaoAdm = document.getElementById('som-promocao-adm');
         const audioAlertaAdm = document.getElementById('som-alerta-adm');
 
- let audioDesbloqueado = false;
-let audioDesbloqueando = false;
+        let audioDesbloqueado = false;
+        let audioDesbloqueando = false;
 
-function desbloquearTodosAudios() {
-    if (audioDesbloqueado || audioDesbloqueando) return;
-    audioDesbloqueando = true;
-
-    const lista = [audioLogin, audioAlerta, audioEnvio, audioEnvioRemetente, audioPeido, audioOnline, audioPromocaoAdm, audioAlertaAdm];
-    let sucessos = 0;
-
-    lista.forEach(a => {
-        if (!a) return;
-        try {
-            a.volume = 0;
-            a.muted = true;
-            const p = a.play();
-            if (p !== undefined) {
-                p.then(() => {
-                    sucessos++;
-                    a.pause();
-                    a.currentTime = 0;
-                    a.volume = 1;      // ← SEMPRE restaura pra 1 (não pra volOrig)
-                    a.muted = false;   // ← SEMPRE desmuta (não pra mutedOrig)
-                }).catch(() => {
-                    a.volume = 1;
-                    a.muted = false;
-                });
-            }
-        } catch (e) {
-            a.volume = 1; a.muted = false;
+        function desbloquearTodosAudios() {
+            if (audioDesbloqueado || audioDesbloqueando) return;
+            audioDesbloqueando = true;
+            const lista = [audioLogin, audioAlerta, audioEnvio, audioEnvioRemetente, audioPeido, audioOnline, audioPromocaoAdm, audioAlertaAdm];
+            let sucessos = 0;
+            lista.forEach(a => {
+                if (!a) return;
+                try {
+                    a.volume = 0; a.muted = true;
+                    const p = a.play();
+                    if (p !== undefined) {
+                        p.then(() => { sucessos++; a.pause(); a.currentTime = 0; a.volume = 1; a.muted = false; })
+                         .catch(() => { a.volume = 1; a.muted = false; });
+                    }
+                } catch (e) { a.volume = 1; a.muted = false; }
+            });
+            setTimeout(() => {
+                if (sucessos > 0) { audioDesbloqueado = true; console.log("[Áudio] ✅ Desbloqueado (" + sucessos + "/8)"); }
+                audioDesbloqueando = false;
+            }, 300);
         }
-    });
-
-    setTimeout(() => {
-        if (sucessos > 0) {
-            audioDesbloqueado = true;
-            console.log("[Áudio] ✅ Desbloqueado (" + sucessos + "/8)");
-        }
-        audioDesbloqueando = false;
-    }, 300);
-}
 
         document.addEventListener('click', desbloquearTodosAudios);
         document.addEventListener('touchstart', desbloquearTodosAudios, { passive: true });
@@ -688,16 +760,13 @@ function desbloquearTodosAudios() {
         function tocarAudio(el) {
             if (!el) return;
             try {
-                // 🛡️ Rede de segurança: se algum áudio ficou mudo/zerado por bug antigo, restaura aqui
                 if (el.muted) el.muted = false;
                 if (el.volume === 0) el.volume = 1;
-
-                el.pause();
-                el.currentTime = 0;
+                el.pause(); el.currentTime = 0;
                 const p = el.play();
                 if (p !== undefined) p.catch(e => {
-                console.warn("[Áudio] Bloqueado:", el.id, "—", e.name);
-                if (e.name === 'NotAllowedError' && !audioDesbloqueado) desbloquearTodosAudios();
+                    console.warn("[Áudio] Bloqueado:", el.id, "—", e.name);
+                    if (e.name === 'NotAllowedError' && !audioDesbloqueado) desbloquearTodosAudios();
                 });
             } catch (e) { console.warn("[Áudio] Erro:", el.id, e); }
         }
@@ -734,10 +803,8 @@ function desbloquearTodosAudios() {
             const video = document.getElementById('peido-video');
             const legenda = document.getElementById('peido-legenda');
             if (!overlay || !video) return;
-
             legenda.innerText = `💨 ${nomeAutor} soltou um peido!`;
             overlay.classList.remove('hidden');
-
             try {
                 video.currentTime = 0;
                 video.muted = false;
@@ -753,7 +820,6 @@ function desbloquearTodosAudios() {
                     });
                 }
             } catch (e) {}
-
             clearTimeout(timerPeido);
             timerPeido = setTimeout(() => fecharPeidoOverlay(), 8300);
         }
@@ -766,7 +832,7 @@ function desbloquearTodosAudios() {
             clearTimeout(timerPeido);
         }
 
-        /* ==================== PRESENÇA (FIX OFFLINE MOBILE) ==================== */
+        /* ==================== PRESENÇA ==================== */
         function restaurarPresenca() {
             if (!meuId || !meuStatus || !firebaseReady) return;
             const stRestore = (meuStatus === 'offline') ? 'online' : meuStatus;
@@ -787,20 +853,10 @@ function desbloquearTodosAudios() {
 
         /* ==================== ABAS DO TOPO ==================== */
         function mudarAbaTop(tipo) {
-            const va = document.getElementById('view-amigos');
-            const vs = document.getElementById('view-salas');
-            const vg = document.getElementById('view-global');
-            const ba = document.getElementById('tab-btn-amigos');
-            const bs = document.getElementById('tab-btn-salas');
-            const bg = document.getElementById('tab-btn-global');
-
-            va.classList.add('hidden');
-            vs.classList.add('hidden');
-            vg.classList.add('hidden');
-            ba.classList.remove('active');
-            bs.classList.remove('active');
-            bg.classList.remove('active');
-
+            const va = document.getElementById('view-amigos'), vs = document.getElementById('view-salas'), vg = document.getElementById('view-global');
+            const ba = document.getElementById('tab-btn-amigos'), bs = document.getElementById('tab-btn-salas'), bg = document.getElementById('tab-btn-global');
+            va.classList.add('hidden'); vs.classList.add('hidden'); vg.classList.add('hidden');
+            ba.classList.remove('active'); bs.classList.remove('active'); bg.classList.remove('active');
             if (tipo === 'amigos') { va.classList.remove('hidden'); ba.classList.add('active'); }
             else if (tipo === 'salas') { vs.classList.remove('hidden'); bs.classList.add('active'); }
             else { vg.classList.remove('hidden'); bg.classList.add('active'); }
@@ -822,12 +878,10 @@ function desbloquearTodosAudios() {
             const senhaConfirma = document.getElementById('senha-confirma').value;
             const err = document.getElementById('senha-erro');
             err.style.display = 'none';
-
             if (!senhaAtual || !senhaNova || !senhaConfirma) { err.innerText = "Preencha todos os campos."; err.style.display = 'block'; return; }
             if (senhaNova.length < 6) { err.innerText = "Senha nova precisa ter no mínimo 6 caracteres."; err.style.display = 'block'; return; }
             if (senhaNova !== senhaConfirma) { err.innerText = "As senhas novas não coincidem."; err.style.display = 'block'; return; }
             if (senhaAtual === senhaNova) { err.innerText = "A nova senha deve ser diferente da atual."; err.style.display = 'block'; return; }
-
             mostrarLoading("Alterando senha...");
             try {
                 const user = auth.currentUser;
@@ -849,27 +903,19 @@ function desbloquearTodosAudios() {
         }
 
         /* ==================== ADICIONAR AMIGO ==================== */
-        function abrirAddAmigo() {
-            document.getElementById('modal-add-amigo').classList.remove('hidden');
-            document.getElementById('add-friend-input').value = '';
-        }
+        function abrirAddAmigo() { document.getElementById('modal-add-amigo').classList.remove('hidden'); document.getElementById('add-friend-input').value = ''; }
         function fecharAddAmigo() { document.getElementById('modal-add-amigo').classList.add('hidden'); }
 
         async function buscarEAdicionarAmigo() {
             const termo = document.getElementById('add-friend-input').value.trim();
             if (!termo) return alert("Digite um apelido ou e-mail.");
             if (termo.length < 2) return alert("Mínimo 2 caracteres.");
-
             mostrarLoading("Buscando...");
             try {
                 let uidEncontrado = null, nomeEncontrado = null;
                 const termoLimpo = termo.toLowerCase().replace(/\s+/g, '');
                 const snapNick = await get(ref(db, 'nicknames/' + termoLimpo));
-                if (snapNick.exists() && snapNick.val().uid) {
-                    uidEncontrado = snapNick.val().uid;
-                    nomeEncontrado = termoLimpo;
-                }
-
+                if (snapNick.exists() && snapNick.val().uid) { uidEncontrado = snapNick.val().uid; nomeEncontrado = termoLimpo; }
                 if (!uidEncontrado) {
                     const snapUsers = await get(ref(db, 'users'));
                     if (snapUsers.exists()) {
@@ -877,29 +923,18 @@ function desbloquearTodosAudios() {
                         const termoLower = termo.toLowerCase();
                         for (const uid in todos) {
                             const u = todos[uid];
-                            if ((u.email && u.email.toLowerCase() === termoLower) ||
-                                (u.nome && u.nome.toLowerCase() === termoLower)) {
-                                uidEncontrado = uid;
-                                nomeEncontrado = u.nome;
-                                break;
-                            }
+                            if ((u.email && u.email.toLowerCase() === termoLower) || (u.nome && u.nome.toLowerCase() === termoLower)) { uidEncontrado = uid; nomeEncontrado = u.nome; break; }
                         }
                     }
                 }
-
                 esconderLoading();
-
                 if (!uidEncontrado) return alert("Usuário não encontrado.");
                 if (uidEncontrado === meuId) return alert("Você não pode adicionar a si mesmo.");
                 if (meusAmigos[uidEncontrado]) return alert(`"${nomeEncontrado}" já está nos seus contatos.`);
-
                 await set(ref(db, 'friends/' + meuId + '/' + uidEncontrado), true);
                 mostrarToastCustom(`✅ <strong>${nomeEncontrado}</strong> adicionado!`, '#4caf50');
                 fecharAddAmigo();
-            } catch (e) {
-                esconderLoading();
-                alert("Erro: " + e.message);
-            }
+            } catch (e) { esconderLoading(); alert("Erro: " + e.message); }
         }
 
         /* ==================== BOOT ==================== */
@@ -910,12 +945,9 @@ function desbloquearTodosAudios() {
             auth = window.auth; onAuthStateChanged = window.onAuthStateChanged; signOut = window.signOut;
             firebaseReady = true;
             minhaFingerprint = gerarFingerprint();
-
             get(ref(db, 'banned_fingerprints/' + minhaFingerprint)).then(snap => {
-                if (snap.exists()) {
-                    document.getElementById('login-screen').classList.add('hidden');
-                    document.getElementById('modal-bloqueio').classList.remove('hidden');
-                } else iniciarMonitoramentoAuth();
+                if (snap.exists()) { document.getElementById('login-screen').classList.add('hidden'); document.getElementById('modal-bloqueio').classList.remove('hidden'); }
+                else iniciarMonitoramentoAuth();
             }).catch(() => iniciarMonitoramentoAuth());
         });
 
@@ -925,64 +957,30 @@ function desbloquearTodosAudios() {
                     if (!sessaoIniciada) {
                         mostrarLoading("Carregando perfil...");
                         const timeoutPerfil = setTimeout(() => {
-                            if (!sessaoIniciada) {
-                                meuId = user.uid;
-                                meuNome = user.email ? user.email.split('@')[0] : "Usuário";
-                                esconderLoading(); iniciarSessao();
-                            }
+                            if (!sessaoIniciada) { meuId = user.uid; meuNome = user.email ? user.email.split('@')[0] : "Usuário"; esconderLoading(); iniciarSessao(); }
                         }, 4000);
-
                         get(ref(db, 'bans/' + user.uid)).then(banSnap => {
                             if (banSnap.exists()) {
                                 const b = banSnap.val();
-                                if (b.tipo === 'perm') {
-                                    document.getElementById('login-screen').classList.add('hidden');
-                                    document.getElementById('motivo-bloqueio').innerText = "Sua conta foi banida permanentemente.\nMotivo: " + (b.motivo || "Violação.");
-                                    document.getElementById('modal-bloqueio').classList.remove('hidden');
-                                    window.signOut(auth); return;
-                                } else if (b.tipo === 'temp' && Date.now() < b.expiraEm) {
-                                    document.getElementById('login-screen').classList.add('hidden');
-                                    document.getElementById('motivo-bloqueio').innerText = "Banido até: " + new Date(b.expiraEm).toLocaleString() + "\nMotivo: " + (b.motivo || "-");
-                                    document.getElementById('modal-bloqueio').classList.remove('hidden');
-                                    window.signOut(auth); return;
-                                } else remove(ref(db, 'bans/' + user.uid));
+                                if (b.tipo === 'perm') { document.getElementById('login-screen').classList.add('hidden'); document.getElementById('motivo-bloqueio').innerText = "Sua conta foi banida permanentemente.\nMotivo: " + (b.motivo || "Violação."); document.getElementById('modal-bloqueio').classList.remove('hidden'); window.signOut(auth); return; }
+                                else if (b.tipo === 'temp' && Date.now() < b.expiraEm) { document.getElementById('login-screen').classList.add('hidden'); document.getElementById('motivo-bloqueio').innerText = "Banido até: " + new Date(b.expiraEm).toLocaleString() + "\nMotivo: " + (b.motivo || "-"); document.getElementById('modal-bloqueio').classList.remove('hidden'); window.signOut(auth); return; }
+                                else remove(ref(db, 'bans/' + user.uid));
                             }
-
                             get(ref(db, 'users/' + user.uid)).then(snapshot => {
                                 clearTimeout(timeoutPerfil);
                                 if (!sessaoIniciada) {
-                                    if (snapshot.exists()) {
-                                        const d = snapshot.val();
-                                        meuId = user.uid;
-                                        meuNome = d.nome || (user.email ? user.email.split('@')[0] : "Usuário");
-                                        meuCargo = d.cargo || 'user';
-                                        meuStatus = d.status === 'offline' ? 'online' : (d.status || 'online');
-                                        meuRecado = d.recado || 'Disponível';
-                                        minhaFoto = d.foto || minhaFoto;
-                                    } else {
-                                        meuId = user.uid;
-                                        meuNome = user.email ? user.email.split('@')[0] : "Usuário";
-                                        meuCargo = 'user'; meuStatus = 'online'; meuRecado = 'Disponível';
-                                    }
-
+                                    if (snapshot.exists()) { const d = snapshot.val(); meuId = user.uid; meuNome = d.nome || (user.email ? user.email.split('@')[0] : "Usuário"); meuCargo = d.cargo || 'user'; meuStatus = d.status === 'offline' ? 'online' : (d.status || 'online'); meuRecado = d.recado || 'Disponível'; minhaFoto = d.foto || minhaFoto; }
+                                    else { meuId = user.uid; meuNome = user.email ? user.email.split('@')[0] : "Usuário"; meuCargo = 'user'; meuStatus = 'online'; meuRecado = 'Disponível'; }
                                     const dados = { nome: meuNome, status: meuStatus, recado: meuRecado, foto: minhaFoto, fingerprint: minhaFingerprint };
                                     if (snapshot.exists()) update(ref(db, 'users/' + meuId), dados);
                                     else { dados.cargo = meuCargo; set(ref(db, 'users/' + meuId), dados); }
-
                                     document.getElementById('my-status').value = meuStatus;
                                     document.getElementById('my-recado').value = meuRecado;
                                     document.getElementById('my-avatar-img').src = minhaFoto;
                                     if (meuCargo !== 'user') document.getElementById('btn-admin').classList.remove('hidden');
                                     esconderLoading(); iniciarSessao();
                                 }
-                            }).catch(() => {
-                                clearTimeout(timeoutPerfil);
-                                if (!sessaoIniciada) {
-                                    meuId = user.uid;
-                                    meuNome = user.email ? user.email.split('@')[0] : "Usuário";
-                                    esconderLoading(); iniciarSessao();
-                                }
-                            });
+                            }).catch(() => { clearTimeout(timeoutPerfil); if (!sessaoIniciada) { meuId = user.uid; meuNome = user.email ? user.email.split('@')[0] : "Usuário"; esconderLoading(); iniciarSessao(); } });
                         });
                     }
                 } else {
@@ -1032,7 +1030,6 @@ function desbloquearTodosAudios() {
                         }
                     }
                 }
-
                 Object.keys(novos).forEach(key => {
                     if (key === meuId) return;
                     const u = novos[key], old = usuariosConhecidos[key];
@@ -1042,11 +1039,9 @@ function desbloquearTodosAudios() {
                         if (!isInitialLoad) mostrarToast(u.nome, 'offline');
                     }
                 });
-
                 usuariosConhecidos = { ...novos };
                 usuariosOnline = novos;
                 renderizarListas();
-
                 if (abaAtiva !== 'global' && !abaAtiva.startsWith('sala_')) {
                     const idOutro = abaAtiva.split('__').find(id => id !== meuId);
                     if (usuariosOnline[idOutro]) {
@@ -1089,6 +1084,8 @@ function desbloquearTodosAudios() {
             enviarMensagemSistema(`${meuNome} entrou no chat!`);
             configurarNotificacoesPM();
             configurarNotificacoesAdmin();
+            configurarListenerDesafios();
+            configurarListenerPartidasAbertas();
         }
 
         async function configurarKickListener() {
@@ -1098,15 +1095,12 @@ function desbloquearTodosAudios() {
             await new Promise(r => setTimeout(r, 400));
             const inicio = Date.now() + offT;
             let primeira = true;
-
             onValue(ref(db, 'kicks/' + meuId), (snap) => {
                 if (primeira) {
                     primeira = false;
-                    if (snap.exists() && (snap.val().timestamp || 0) < inicio - 5000) {
-                        remove(ref(db, 'kicks/' + meuId)).catch(()=>{}); return;
-                    } else if (!snap.exists()) return;
+                    if (snap.exists() && (snap.val().timestamp || 0) < inicio - 5000) { remove(ref(db, 'kicks/' + meuId)).catch(()=>{}); return; }
+                    else if (!snap.exists()) return;
                 } else if (!snap.exists()) return;
-
                 const k = snap.val();
                 setTimeout(async () => {
                     alert("⚠️ " + (k.motivo || "Você foi removido."));
@@ -1133,33 +1127,19 @@ function desbloquearTodosAudios() {
 
         async function fazerLogin() {
             if (!firebaseReady) return alert("Aguarde 2s.");
-            try {
-                const bc = await get(ref(db, 'banned_fingerprints/' + minhaFingerprint));
-                if (bc.exists()) { document.getElementById('login-screen').classList.add('hidden'); document.getElementById('modal-bloqueio').classList.remove('hidden'); return; }
-            } catch (e) {}
-
+            try { const bc = await get(ref(db, 'banned_fingerprints/' + minhaFingerprint)); if (bc.exists()) { document.getElementById('login-screen').classList.add('hidden'); document.getElementById('modal-bloqueio').classList.remove('hidden'); return; } } catch (e) {}
             const nome = document.getElementById('login-name').value.trim();
             const senha = document.getElementById('login-pass').value;
             const st = document.getElementById('login-status').value;
             const err = document.getElementById('login-error');
             err.style.display = 'none';
-
             if (!nome || !senha) { err.innerText = "Preencha todos os campos."; err.style.display = 'block'; return; }
-
-            mostrarLoading("Entrando...");
-            isInitialLoad = true; meuStatus = st;
-
+            mostrarLoading("Entrando..."); isInitialLoad = true; meuStatus = st;
             const tId = setTimeout(() => { esconderLoading(); err.innerText = "Servidor demorou."; err.style.display = 'block'; }, 10000);
-
             try {
                 await window.signOut(auth);
                 if (nome.includes('@')) await window.signInWithEmailAndPassword(auth, nome, senha);
-                else {
-                    const nf = nome.toLowerCase().replace(/\s+/g, '');
-                    const snap = await get(ref(db, 'nicknames/' + nf));
-                    const email = (snap.exists() && snap.val().email) ? snap.val().email : `${nf}@msnlivre.app`;
-                    await window.signInWithEmailAndPassword(auth, email, senha);
-                }
+                else { const nf = nome.toLowerCase().replace(/\s+/g, ''); const snap = await get(ref(db, 'nicknames/' + nf)); const email = (snap.exists() && snap.val().email) ? snap.val().email : `${nf}@msnlivre.app`; await window.signInWithEmailAndPassword(auth, email, senha); }
                 clearTimeout(tId);
                 document.getElementById('loading-text').innerText = "Carregando perfil...";
             } catch (e) {
@@ -1179,14 +1159,11 @@ function desbloquearTodosAudios() {
             const idade = document.getElementById('reg-age').value.trim();
             const err = document.getElementById('cadastro-error');
             err.style.display = 'none';
-
             if (!nome || !email || !senha || !idade) { err.innerText = "Preencha todos os campos."; err.style.display = 'block'; return; }
             if (parseInt(idade) < 18) { err.innerText = "Apenas maiores de 18."; err.style.display = 'block'; return; }
             if (senha.length < 6) { err.innerText = "Senha mínima: 6 caracteres."; err.style.display = 'block'; return; }
-
             mostrarLoading("Registrando..."); isInitialLoad = true;
             const tId = setTimeout(() => { esconderLoading(); err.innerText = "Servidor demorou."; err.style.display = 'block'; }, 10000);
-
             get(ref(db, 'nicknames/' + nome.toLowerCase())).then(snap => {
                 if (snap.exists()) { clearTimeout(tId); esconderLoading(); err.innerText = "Apelido já em uso."; err.style.display = 'block'; }
                 else {
@@ -1241,25 +1218,21 @@ function desbloquearTodosAudios() {
             const nome = isInv ? `<span style="color:#7f8c8d; font-size:10px;">[Invisível]</span> ${user.nome}` : user.nome;
             const countAvisos = avisosUsuarios[id] ? Object.keys(avisosUsuarios[id]).length : 0;
             const avisoBadge = (isOff && countAvisos > 0) ? ` <span style="color:#f39c12; font-size:10px;">(⚠️ ${countAvisos}/3)</span>` : '';
-
             const li = document.createElement('li');
             li.className = 'admin-user-item';
             if (isInv) li.style.borderLeftColor = '#7f8c8d';
             if (isOff) li.style.borderLeftColor = '#95a5a6';
-
             let actions = '';
             if (!isOff && temPermissao('avisar')) actions += `<button class="btn-aviso" onclick="executarAviso('${id}', '${user.nome}')">⚠️ ${countAvisos}/3</button>`;
             if (!isOff && temPermissao('kick')) actions += `<button class="btn-kick" onclick="executarKick('${id}', '${user.nome}')">Kick</button>`;
             if (!isOff && temPermissao('ban1h')) actions += `<button class="btn-ban-temp" onclick="executarBanTemp('${id}', '${user.nome}')">Ban 1h</button>`;
             if (temPermissao('banperm')) actions += `<button class="btn-ban-perm" onclick="executarBanPerm('${id}', '${user.nome}')">Ban Perm</button>`;
             if (temPermissao('desbanir')) actions += `<button class="btn-unban" onclick="executarUnban('${id}', '${user.nome}')">Desbanir</button>`;
-
             let promo = '';
             if (temPermissao('promover')) {
                 const cds = (CARGOS_PROMOVER[meuCargo] || []).filter(c => c !== (user.cargo || 'user'));
                 if (cds.length > 0) promo = `<select class="admin-promote-select" onchange="if(this.value){promoverUsuario('${id}', '${user.nome}', this.value); this.value='';}"><option value="">Promover...</option>${cds.map(c => `<option value="${c}">→ ${c.toUpperCase()}</option>`).join('')}</select>`;
             }
-
             li.innerHTML = `
                 <div class="admin-user-info">
                     <strong>${nome} <span style="font-size:10px; color:#f1c40f;">(${(user.cargo || 'user').toUpperCase()})</span>${isOff ? ' <span style="color:#95a5a6;">[OFF]</span>' : ''}${avisoBadge}</strong>
@@ -1308,7 +1281,6 @@ function desbloquearTodosAudios() {
             const m = prompt(`Motivo do AVISO para ${nomeAlvo}:`, "Comportamento inadequado");
             if (m === null) return;
             const motivo = m.trim() || "Sem motivo";
-
             set(push(ref(db, 'warnings/' + idAlvo)), { motivo, autor: meuNome, idAutor: meuId, timestamp: serverTimestamp() })
                 .then(async () => {
                     const snap = await get(ref(db, 'warnings/' + idAlvo));
@@ -1336,7 +1308,6 @@ function desbloquearTodosAudios() {
             if (m === null) return;
             const motivo = m.trim() || "Sem motivo";
             const expiraEm = Date.now() + 60 * 60 * 1000;
-
             set(ref(db, 'bans/' + idAlvo), { tipo: 'temp', expiraEm, motivo })
                 .then(() => set(ref(db, 'kicks/' + idAlvo), { motivo: `BAN 1H: ${motivo}`, timestamp: serverTimestamp() }))
                 .then(() => { anunciarAdmin(`Baniu ${nomeAlvo} por 1 HORA. Motivo: ${motivo}`, 'ban'); mostrarToastCustom(`🔨 ${nomeAlvo} banido 1h`, '#f1c40f'); })
@@ -1349,7 +1320,6 @@ function desbloquearTodosAudios() {
             const m = prompt(`Motivo do BAN PERMANENTE em ${nomeAlvo}:`, "Violação grave");
             if (m === null) return;
             const motivo = m.trim() || "Sem motivo";
-
             get(ref(db, 'users/' + idAlvo)).then(snap => {
                 const u = snap.val() || {};
                 return set(ref(db, 'bans/' + idAlvo), { tipo: 'perm', motivo })
@@ -1365,7 +1335,6 @@ function desbloquearTodosAudios() {
             const m = prompt(`Motivo do DESBAN:`, "Recurso aceito");
             if (m === null) return;
             const motivo = m.trim() || "Sem motivo";
-
             get(ref(db, 'users/' + idAlvo)).then(snap => {
                 const u = snap.val() || {};
                 return remove(ref(db, 'bans/' + idAlvo))
@@ -1379,7 +1348,6 @@ function desbloquearTodosAudios() {
             if (!podePromoverPara(novoCargo)) return alert("Cargo não permitido.");
             if (idAlvo === meuId) return alert("Você não pode alterar seu cargo.");
             if (!confirm(`Alterar cargo de ${nomeAlvo} para ${novoCargo.toUpperCase()}?`)) return;
-
             update(ref(db, 'users/' + idAlvo), { cargo: novoCargo })
                 .then(() => { anunciarAdmin(`Cargo de ${nomeAlvo} → ${novoCargo.toUpperCase()}`, 'promocao'); mostrarToastCustom(`⭐ ${nomeAlvo} → <strong>${novoCargo.toUpperCase()}</strong>`, '#9b59b6'); })
                 .catch(e => alert("Erro: " + e.message));
@@ -1420,12 +1388,8 @@ function desbloquearTodosAudios() {
         }
         function fecharCriarSala() { document.getElementById('modal-criar-sala').classList.add('hidden'); }
 
-        function processarFotoSalaCriacao(ev) {
-            processarImagemQuadrada(ev, base64 => { fotoSalaCriacao = base64; document.getElementById('criar-sala-foto-preview').src = base64; });
-        }
-        function processarFotoSalaEdicao(ev) {
-            processarImagemQuadrada(ev, base64 => { fotoSalaEdicao = base64; document.getElementById('editar-sala-foto-preview').src = base64; });
-        }
+        function processarFotoSalaCriacao(ev) { processarImagemQuadrada(ev, base64 => { fotoSalaCriacao = base64; document.getElementById('criar-sala-foto-preview').src = base64; }); }
+        function processarFotoSalaEdicao(ev) { processarImagemQuadrada(ev, base64 => { fotoSalaEdicao = base64; document.getElementById('editar-sala-foto-preview').src = base64; }); }
 
         function processarImagemQuadrada(ev, callback) {
             const f = ev.target.files[0]; if (!f) return;
@@ -1451,23 +1415,16 @@ function desbloquearTodosAudios() {
             const bio = document.getElementById('sala-bio').value.trim();
             const privada = document.getElementById('sala-privada').checked;
             const senha = document.getElementById('sala-senha').value;
-
             if (!nome) return alert('Digite o nome.');
             if (privada && senha.length < 3) return alert('Senha mínima: 3 caracteres.');
-
             const roomRef = push(ref(db, 'rooms'));
             const roomId = roomRef.key;
-
             const dados = { nome, publica: !privada, idCriador: meuId, nomeCriador: meuNome, timestamp: serverTimestamp() };
             if (bio) dados.bio = bio;
             if (fotoSalaCriacao) dados.foto = fotoSalaCriacao;
-
             try {
                 await set(roomRef, dados);
-                if (privada) {
-                    const hash = await sha256(senha);
-                    await set(ref(db, 'room_secrets/' + roomId), { senhaHash: hash });
-                }
+                if (privada) { const hash = await sha256(senha); await set(ref(db, 'room_secrets/' + roomId), { senhaHash: hash }); }
                 fotoSalaCriacao = '';
                 mostrarToastCustom(`🎉 Sala <strong>${nome}</strong> criada!`, '#4caf50');
                 fecharCriarSala();
@@ -1480,21 +1437,16 @@ function desbloquearTodosAudios() {
             if (!sala) return;
             if (isAdminCargo(meuCargo) || sala.idCriador === meuId) { abrirAbaSala(roomId, sala.nome); return; }
             if (salaMembros[roomId] && salaMembros[roomId][meuId]) { abrirAbaSala(roomId, sala.nome); return; }
-
             if (sala.publica) {
                 try { await set(ref(db, `room_members/${roomId}/${meuId}`), 'public'); abrirAbaSala(roomId, sala.nome); }
                 catch (e) { alert('Erro ao entrar: ' + e.message); }
                 return;
             }
-
             const senha = prompt(`🔒 Senha da sala "${sala.nome}":`);
             if (senha === null) return;
             const hash = await sha256(senha);
-            try {
-                await set(ref(db, `room_members/${roomId}/${meuId}`), hash);
-                mostrarToastCustom(`🔓 Entrou em <strong>${sala.nome}</strong>`, '#4caf50');
-                abrirAbaSala(roomId, sala.nome);
-            } catch (e) { alert('❌ Senha incorreta!'); }
+            try { await set(ref(db, `room_members/${roomId}/${meuId}`), hash); mostrarToastCustom(`🔓 Entrou em <strong>${sala.nome}</strong>`, '#4caf50'); abrirAbaSala(roomId, sala.nome); }
+            catch (e) { alert('❌ Senha incorreta!'); }
         }
 
         function abrirAbaSala(roomId, nomeSala) {
@@ -1534,10 +1486,7 @@ function desbloquearTodosAudios() {
             document.getElementById('modal-editar-sala').classList.remove('hidden');
         }
 
-        function fecharEditarSala() {
-            document.getElementById('modal-editar-sala').classList.add('hidden');
-            salaEditandoId = null; fotoSalaEdicao = '';
-        }
+        function fecharEditarSala() { document.getElementById('modal-editar-sala').classList.add('hidden'); salaEditandoId = null; fotoSalaEdicao = ''; }
 
         async function salvarEdicaoSala() {
             if (!salaEditandoId) return;
@@ -1547,11 +1496,8 @@ function desbloquearTodosAudios() {
             const bio = document.getElementById('editar-sala-bio').value.trim();
             if (!nome) return alert('Nome não pode ficar vazio.');
             const upd = { nome, bio: bio || '', foto: fotoSalaEdicao || '' };
-            try {
-                await update(ref(db, 'rooms/' + salaEditandoId), upd);
-                mostrarToastCustom(`✅ Sala atualizada!`, '#4caf50');
-                fecharEditarSala();
-            } catch (e) { alert('Erro: ' + e.message); }
+            try { await update(ref(db, 'rooms/' + salaEditandoId), upd); mostrarToastCustom(`✅ Sala atualizada!`, '#4caf50'); fecharEditarSala(); }
+            catch (e) { alert('Erro: ' + e.message); }
         }
 
         function renderizarSalas() {
@@ -1559,7 +1505,6 @@ function desbloquearTodosAudios() {
             list.innerHTML = '';
             const searchEl = document.getElementById('sala-search');
             const termo = searchEl ? searchEl.value.toLowerCase().trim() : '';
-
             let arr = Object.entries(salasConhecidas || {});
             if (termo) {
                 arr = arr.filter(([_, s]) =>
@@ -1568,26 +1513,20 @@ function desbloquearTodosAudios() {
                     (s.nomeCriador || '').toLowerCase().includes(termo)
                 );
             }
-
             if (arr.length === 0) {
-                list.innerHTML = termo
-                    ? '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Nenhuma sala encontrada.</li>'
-                    : '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Nenhuma sala. Clique em ➕</li>';
+                list.innerHTML = termo ? '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Nenhuma sala encontrada.</li>' : '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Nenhuma sala. Clique em ➕</li>';
                 return;
             }
-
             arr.sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
             arr.forEach(([roomId, sala]) => {
                 const li = document.createElement('li');
                 li.className = 'contact-item';
                 li.style.cursor = 'pointer';
                 li.onclick = () => entrarSala(roomId);
-
                 const podeExcluir = isAdminCargo(meuCargo) || sala.idCriador === meuId;
                 const podeEditar = isAdminCargo(meuCargo) || sala.idCriador === meuId;
                 const icone = sala.publica ? '🌐' : '🔒';
                 const bio = sala.bio || ('por ' + (sala.nomeCriador || '???'));
-
                 li.innerHTML = `
                     <img src="${sala.foto || FOTO_SALA_PADRAO}" style="width:26px; height:26px; border-radius:4px; object-fit:cover; border:1px solid #d1e0f5; flex-shrink:0;">
                     <div class="contact-info" style="display:flex; flex-direction:column; flex:1; min-width:0;">
@@ -1624,10 +1563,8 @@ function desbloquearTodosAudios() {
             if (!gl || !fl) return;
             gl.innerHTML = ''; fl.innerHTML = '';
             bmA.classList.add('hidden'); bmG.classList.add('hidden');
-
             const termF = (document.getElementById('friends-search')?.value || '').toLowerCase().trim();
             const termG = (document.getElementById('global-search')?.value || '').toLowerCase().trim();
-
             let count = 0;
             let listaG = [], listaF = [];
             if (usuariosOnline) {
@@ -1641,17 +1578,13 @@ function desbloquearTodosAudios() {
                     }
                 });
             }
-
             if (termF) listaF = listaF.filter(it => (it.user.nome || '').toLowerCase().includes(termF));
             if (termG) listaG = listaG.filter(it => (it.user.nome || '').toLowerCase().includes(termG));
-
             const ord = (a, b) => (a.user.status === 'offline' && b.user.status !== 'offline') ? 1 : (a.user.status !== 'offline' && b.user.status === 'offline') ? -1 : 0;
             listaG.sort(ord); listaF.sort(ord);
 
             if (listaF.length === 0) {
-                fl.innerHTML = termF
-                    ? '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Nenhum amigo encontrado.</li>'
-                    : '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Clique no + para adicionar um amigo.</li>';
+                fl.innerHTML = termF ? '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Nenhum amigo encontrado.</li>' : '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Clique no + para adicionar um amigo.</li>';
             } else {
                 const exib = expandirAmigos ? listaF : listaF.slice(0, LIMITE_LISTA);
                 exib.forEach(item => {
@@ -1693,7 +1626,6 @@ function desbloquearTodosAudios() {
             } else if (termG) {
                 gl.innerHTML = '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Nenhum usuário encontrado.</li>';
             }
-
             document.getElementById('online-count').innerText = `(${count})`;
         }
 
@@ -1789,9 +1721,7 @@ function desbloquearTodosAudios() {
         function mudarAba(idAba) {
             abaAtiva = idAba; abasNaoLidas[idAba] = false; renderizarAbas();
             document.getElementById('chat-history').innerHTML = ''; ultimaMsgId = null;
-
             const ch = document.getElementById('chat-header'), av = document.getElementById('digitando-aviso');
-
             if (idAba === 'global') { ch.style.display = 'none'; av.style.display = 'none'; }
             else if (idAba.startsWith('sala_')) {
                 const rid = idAba.substring(5), sala = salasConhecidas[rid];
@@ -1811,7 +1741,6 @@ function desbloquearTodosAudios() {
                     av.style.display = u.digitando === true ? 'block' : 'none';
                 }
             }
-
             if (msgListenerAtual && firebaseReady) off(msgListenerAtual);
             msgListenerAtual = ref(db, obterCaminhoMsg(idAba));
             onValue(msgListenerAtual, (snap) => renderizarMensagens(snap.val(), idAba));
@@ -1937,7 +1866,6 @@ function desbloquearTodosAudios() {
             const isFirst = ultimaMsgId === null;
             const arr = Object.entries(messages).map(([id, d]) => ({ id, ...d })).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
             let lastId = null;
-
             arr.forEach(msg => {
                 const isMeu = msg.idAutor === meuId;
                 if (msg.tipo === 'texto') {
@@ -1981,13 +1909,10 @@ function desbloquearTodosAudios() {
                     }
                 }
             });
-
             if (lastId && lastId !== ultimaMsgId) {
                 const msg = arr[arr.length - 1], isMeu = msg.idAutor === meuId;
                 if (!isFirst && (idAba === 'global' || msg.idAlvo === meuId || idAba.startsWith('sala_'))) {
-                    if (msg.tipo === 'peido') {
-                        if (!isMeu) abrirPeidoOverlay(msg.autor);
-                    }
+                    if (msg.tipo === 'peido') { if (!isMeu) abrirPeidoOverlay(msg.autor); }
                     else if (msg.tipo === 'nudge') { tocarAudio(audioAlerta); document.getElementById('msn-window').classList.add('nudge-animation'); setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500); }
                     else if (!isMeu) {
                         if (msg.tipo === 'texto' || msg.tipo === 'imagem') tocarAudio(audioEnvio);
@@ -2014,22 +1939,17 @@ function desbloquearTodosAudios() {
                     if (!latest || latest.idAutor === meuId || latest.idAlvo !== meuId) return;
                     if (abasNaoLidas[cidNorm] === keys[keys.length - 1]) return;
                     abasNaoLidas[cidNorm] = keys[keys.length - 1];
-
                     const idOutro = partes.find(id => id !== meuId);
                     const nomeOutro = usuariosOnline[idOutro] ? usuariosOnline[idOutro].nome : 'Alguém';
                     let a = abasAbertas.find(x => x.id === cidNorm);
                     if (!a) abasAbertas.push({ id: cidNorm, nome: nomeOutro });
                     else if (a.nome === 'Alguém' && nomeOutro !== 'Alguém') a.nome = nomeOutro;
                     renderizarAbas();
-
                     if (isInitialLoad) return;
                     if (latest.tipo === 'texto') { tocarAudio(audioEnvio); mostrarPopupPM(nomeOutro, formatarTexto(latest.texto), cidNorm); }
                     else if (latest.tipo === 'imagem') { tocarAudio(audioEnvio); mostrarPopupPM(nomeOutro, "📷 Enviou uma foto", cidNorm); }
                     else if (latest.tipo === 'nudge') { tocarAudio(audioAlerta); document.getElementById('msn-window').classList.add('nudge-animation'); setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500); mostrarPopupPM(nomeOutro, "🔔 Te chamou atenção!", cidNorm); }
-                    else if (latest.tipo === 'peido') {
-                        abrirPeidoOverlay(nomeOutro);
-                        mostrarPopupPM(nomeOutro, "💨 Soltou um peido!", cidNorm);
-                    }
+                    else if (latest.tipo === 'peido') { abrirPeidoOverlay(nomeOutro); mostrarPopupPM(nomeOutro, "💨 Soltou um peido!", cidNorm); }
                     else if (latest.tipo === 'dedo') { tocarAudio(audioAlerta); document.getElementById('msn-window').classList.add('nudge-animation'); setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500); mostrarPopupPM(nomeOutro, "🖕 Te mandou um dedo!", cidNorm); }
                 });
             });
@@ -2038,7 +1958,6 @@ function desbloquearTodosAudios() {
         /* ==================== NOTIFICAÇÕES ADMIN ==================== */
         let adminLogInit = false;
         const adminLogSeen = new Set();
-
         function configurarNotificacoesAdmin() {
             onValue(ref(db, 'admin_log'), (snap) => {
                 const log = snap.val();
@@ -2046,10 +1965,7 @@ function desbloquearTodosAudios() {
                 const entries = Object.entries(log);
                 const novas = [];
                 entries.forEach(([id, d]) => {
-                    if (!adminLogSeen.has(id)) {
-                        adminLogSeen.add(id);
-                        if (adminLogInit) novas.push({ id, ...d });
-                    }
+                    if (!adminLogSeen.has(id)) { adminLogSeen.add(id); if (adminLogInit) novas.push({ id, ...d }); }
                 });
                 if (adminLogInit) {
                     novas.forEach(d => {
@@ -2062,6 +1978,429 @@ function desbloquearTodosAudios() {
                 adminLogInit = true;
             });
         }
+
+        /* ==================== JOGO DE DAMAS ==================== */
+        let damaEstado = {
+            gameId: null,
+            board: new Array(64).fill('.'),
+            turno: null,
+            player1: null,
+            player2: null,
+            status: 'idle',
+            timerStart: 0,
+            timerInterval: null,
+            listenerJogo: null,
+            listenerChat: null,
+            desafioRecebido: null,
+            desafioListener: null,
+            partidasAbertasListener: null,
+            selecionada: null,
+            movimentosValidos: [],
+            ultimaJogadaSinc: 0
+        };
+        const DAMA_TEMPO_JOGADA = 60;
+
+        function indiceParaCoord(i) { return { row: Math.floor(i / 8), col: i % 8 }; }
+        function coordParaIndice(r, c) { return r * 8 + c; }
+        function isCasaEscura(r, c) { return (r + c) % 2 === 1; }
+
+        function tabuleiroInicial() {
+            const b = new Array(64).fill('.');
+            for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+                if (!isCasaEscura(r, c)) continue;
+                const i = coordParaIndice(r, c);
+                if (r < 3) b[i] = 'b'; else if (r > 4) b[i] = 'r';
+            }
+            return b;
+        }
+        function boardParaString(b) { return b.join(''); }
+        function stringParaBoard(s) { return s.split(''); }
+
+        function abrirDesafiarDama() {
+            if (damaEstado.status === 'playing' || damaEstado.status === 'waiting') return alert("Você já está em uma partida!");
+            const sel = document.getElementById('dama-select-adversario'); sel.innerHTML = '';
+            let tem = false;
+            Object.keys(usuariosOnline).forEach(k => {
+                const u = usuariosOnline[k];
+                if (k !== meuId && u.nome && u.status === 'online') { sel.appendChild(new Option(u.nome, k)); tem = true; }
+            });
+            if (!tem) return alert("Ninguém online para desafiar! 😢");
+            document.getElementById('modal-desafiar-dama').classList.remove('hidden');
+        }
+        function fecharDesafiarDama() { document.getElementById('modal-desafiar-dama').classList.add('hidden'); }
+
+        async function enviarDesafioDama() {
+            const sel = document.getElementById('dama-select-adversario');
+            const idAlvo = sel.value;
+            const nomeAlvo = sel.options[sel.selectedIndex].text;
+            if (!idAlvo) return alert("Escolha um adversário.");
+            if (idAlvo === meuId) return alert("Você não pode se desafiar.");
+            const gameRef = push(ref(db, 'checkers'));
+            const gameId = gameRef.key;
+            const dados = {
+                player1: { uid: meuId, nome: meuNome },
+                player2: { uid: idAlvo, nome: nomeAlvo },
+                status: 'waiting',
+                board: boardParaString(tabuleiroInicial()),
+                turno: meuId,
+                timerStart: 0,
+                criadoEm: serverTimestamp()
+            };
+            try {
+                await set(gameRef, dados);
+                fecharDesafiarDama();
+                mostrarToastCustom(`♟️ Desafio enviado para <strong>${nomeAlvo}</strong>`, '#9b59b6');
+            } catch (e) { alert("Erro ao criar partida: " + e.message); }
+        }
+
+        function configurarListenerDesafios() {
+            if (damaEstado.desafioListener) off(damaEstado.desafioListener);
+            damaEstado.desafioListener = ref(db, 'checkers');
+            onValue(damaEstado.desafioListener, (snap) => {
+                const todos = snap.val() || {};
+                let encontrado = null;
+                for (const gid in todos) {
+                    const j = todos[gid];
+                    if (j.status === 'waiting' && j.player2 && j.player2.uid === meuId) { encontrado = { gameId: gid, ...j }; break; }
+                }
+                if (encontrado && (!damaEstado.desafioRecebido || damaEstado.desafioRecebido.gameId !== encontrado.gameId)) {
+                    if (damaEstado.status === 'idle') {
+                        damaEstado.desafioRecebido = encontrado;
+                        document.getElementById('desafio-nome-autor').innerText = encontrado.player1.nome;
+                        document.getElementById('modal-receber-desafio').classList.remove('hidden');
+                        tocarAudio(audioAlerta);
+                    }
+                } else if (!encontrado && damaEstado.desafioRecebido) {
+                    damaEstado.desafioRecebido = null;
+                    document.getElementById('modal-receber-desafio').classList.add('hidden');
+                }
+            });
+        }
+
+        async function aceitarDesafioDama() {
+            if (!damaEstado.desafioRecebido) return;
+            const gameId = damaEstado.desafioRecebido.gameId;
+            document.getElementById('modal-receber-desafio').classList.add('hidden');
+            damaEstado.desafioRecebido = null;
+            try {
+                await update(ref(db, 'checkers/' + gameId), { status: 'playing', timerStart: Date.now() });
+                abrirJogoDama(gameId);
+            } catch (e) { alert("Erro ao aceitar: " + e.message); }
+        }
+
+        async function recusarDesafioDama() {
+            if (!damaEstado.desafioRecebido) return;
+            const gameId = damaEstado.desafioRecebido.gameId;
+            document.getElementById('modal-receber-desafio').classList.add('hidden');
+            damaEstado.desafioRecebido = null;
+            try { await remove(ref(db, 'checkers/' + gameId)); mostrarToastCustom(`❌ Você recusou o desafio`, '#e81123'); } catch (e) {}
+        }
+
+        function abrirJogoDama(gameId) {
+            damaEstado.gameId = gameId;
+            document.getElementById('modal-dama-jogo').classList.remove('hidden');
+            document.getElementById('dama-vencedor').classList.add('hidden');
+            document.getElementById('dama-vencedor').innerText = '';
+            if (damaEstado.listenerJogo) off(damaEstado.listenerJogo);
+            damaEstado.listenerJogo = ref(db, 'checkers/' + gameId);
+            onValue(damaEstado.listenerJogo, (snap) => {
+                const j = snap.val();
+                if (!j) { alert("Partida encerrada."); fecharJogoDama(); return; }
+                damaEstado.board = stringParaBoard(j.board);
+                damaEstado.turno = j.turno;
+                damaEstado.player1 = j.player1;
+                damaEstado.player2 = j.player2;
+                damaEstado.status = j.status;
+                damaEstado.timerStart = j.timerStart || 0;
+                damaEstado.selecionada = null;
+                damaEstado.movimentosValidos = [];
+                atualizarUIGeral();
+                desenharTabuleiro();
+                if (j.status === 'finished') {
+                    clearInterval(damaEstado.timerInterval);
+                    const venc = document.getElementById('dama-vencedor');
+                    venc.classList.remove('hidden');
+                    if (j.vencedor === 'empate') venc.innerText = '🤝 EMPATE!';
+                    else {
+                        const nome = (j.vencedor === j.player1.uid) ? j.player1.nome : j.player2.nome;
+                        venc.innerText = `🏆 ${nome} VENCEU!`;
+                    }
+                } else {
+                    iniciarTimerDisplay();
+                }
+            });
+            if (damaEstado.listenerChat) off(damaEstado.listenerChat);
+            damaEstado.listenerChat = ref(db, 'checkers/' + gameId + '/chat');
+            onValue(damaEstado.listenerChat, (snap) => { renderizarChatDama(snap.val() || {}); });
+            configurarCliqueCanvas();
+            iniciarTimerDisplay();
+        }
+
+        function fecharJogoDama() {
+            document.getElementById('modal-dama-jogo').classList.add('hidden');
+            if (damaEstado.listenerJogo) { off(damaEstado.listenerJogo); damaEstado.listenerJogo = null; }
+            if (damaEstado.listenerChat) { off(damaEstado.listenerChat); damaEstado.listenerChat = null; }
+            clearInterval(damaEstado.timerInterval);
+            damaEstado.gameId = null;
+            damaEstado.status = 'idle';
+            damaEstado.selecionada = null;
+            damaEstado.movimentosValidos = [];
+        }
+
+        function atualizarUIGeral() {
+            const p1 = damaEstado.player1, p2 = damaEstado.player2;
+            if (!p1 || !p2) return;
+            const p1El = document.getElementById('dama-p1-info');
+            const p2El = document.getElementById('dama-p2-info');
+            const ativo1 = damaEstado.turno === p1.uid;
+            const ativo2 = damaEstado.turno === p2.uid;
+            p1El.innerHTML = `<span>🔴 ${p1.nome}${p1.uid === meuId ? ' (Você)' : ''}</span><span>${ativo1 ? '▶' : ''}</span>`;
+            p2El.innerHTML = `<span>⚫ ${p2.nome}${p2.uid === meuId ? ' (Você)' : ''}</span><span>${ativo2 ? '▶' : ''}</span>`;
+            p1El.className = 'dama-player' + (ativo1 ? ' ativo' : '');
+            p2El.className = 'dama-player' + (ativo2 ? ' ativo' : '');
+            document.getElementById('dama-titulo-partida').innerText = `♟️ Damas: ${p1.nome} vs ${p2.nome}`;
+            const souPlayer = (p1.uid === meuId || p2.uid === meuId);
+            let vez = (damaEstado.turno === meuId) ? 'Sua vez!' : `Vez de ${damaEstado.turno === p1.uid ? p1.nome : p2.nome}`;
+            if (!souPlayer) vez = '👀 Espectador';
+            document.getElementById('dama-info-vez').innerText = vez;
+        }
+
+        function iniciarTimerDisplay() {
+            clearInterval(damaEstado.timerInterval);
+            if (damaEstado.status !== 'playing') return;
+            const el = document.getElementById('dama-info-timer');
+            const atualizar = () => {
+                if (!damaEstado.timerStart) { el.innerText = ''; return; }
+                const decorrido = Math.floor((Date.now() - damaEstado.timerStart) / 1000);
+                const restante = Math.max(0, DAMA_TEMPO_JOGADA - decorrido);
+                el.innerText = `⏱ ${restante}s`;
+                if (restante === 0 && damaEstado.turno === meuId) passarVezAutomatico();
+            };
+            atualizar();
+            damaEstado.timerInterval = setInterval(atualizar, 500);
+        }
+
+        async function passarVezAutomatico() {
+            if (damaEstado.status !== 'playing' || damaEstado.turno !== meuId) return;
+            const p1 = damaEstado.player1, p2 = damaEstado.player2;
+            const adv = (damaEstado.turno === p1.uid) ? p2.uid : p1.uid;
+            try { await update(ref(db, 'checkers/' + damaEstado.gameId), { turno: adv, timerStart: Date.now() }); } catch (e) {}
+        }
+
+        function desenharTabuleiro() {
+            const canvas = document.getElementById('dama-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width / 8;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+                const i = coordParaIndice(r, c);
+                ctx.fillStyle = isCasaEscura(r, c) ? '#8b5a2b' : '#f0d9b5';
+                ctx.fillRect(c * size, r * size, size, size);
+                if (damaEstado.selecionada === i) { ctx.fillStyle = 'rgba(76,175,80,0.5)'; ctx.fillRect(c * size, r * size, size, size); }
+                if (damaEstado.movimentosValidos.includes(i)) {
+                    ctx.fillStyle = 'rgba(241,196,15,0.6)';
+                    ctx.beginPath(); ctx.arc(c * size + size/2, r * size + size/2, size/5, 0, Math.PI * 2); ctx.fill();
+                }
+                const peca = damaEstado.board[i];
+                if (peca === 'r' || peca === 'R' || peca === 'b' || peca === 'B') {
+                    const isVerm = (peca === 'r' || peca === 'R');
+                    const isDama = (peca === 'R' || peca === 'B');
+                    ctx.beginPath(); ctx.arc(c * size + size/2, r * size + size/2, size * 0.35, 0, Math.PI * 2);
+                    ctx.fillStyle = isVerm ? '#e81123' : '#222'; ctx.fill();
+                    ctx.strokeStyle = isVerm ? '#8b0000' : '#000'; ctx.lineWidth = 2; ctx.stroke();
+                    if (isDama) {
+                        ctx.fillStyle = '#f1c40f';
+                        ctx.font = 'bold ' + Math.floor(size * 0.5) + 'px Arial';
+                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                        ctx.fillText('♛', c * size + size/2, r * size + size/2);
+                    }
+                }
+            }
+        }
+
+        function configurarCliqueCanvas() {
+            const canvas = document.getElementById('dama-canvas');
+            if (!canvas) return;
+            canvas.onclick = (e) => {
+                if (damaEstado.status !== 'playing' || damaEstado.turno !== meuId) return;
+                if (damaEstado.player1.uid !== meuId && damaEstado.player2.uid !== meuId) return;
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left, y = e.clientY - rect.top;
+                const size = rect.width / 8;
+                const col = Math.floor(x / size), row = Math.floor(y / size);
+                if (col < 0 || col > 7 || row < 0 || row > 7) return;
+                const i = coordParaIndice(row, col);
+                if (damaEstado.movimentosValidos.includes(i)) {
+                    executarMovimento(damaEstado.selecionada, i);
+                    damaEstado.selecionada = null;
+                    damaEstado.movimentosValidos = [];
+                    desenharTabuleiro();
+                    return;
+                }
+                const peca = damaEstado.board[i];
+                const minhaCor = (damaEstado.player1.uid === meuId) ? 'r' : 'b';
+                if (peca.toLowerCase() === minhaCor) {
+                    damaEstado.selecionada = i;
+                    damaEstado.movimentosValidos = calcularMovimentosValidos(i);
+                    desenharTabuleiro();
+                } else {
+                    damaEstado.selecionada = null;
+                    damaEstado.movimentosValidos = [];
+                    desenharTabuleiro();
+                }
+            };
+        }
+
+        function calcularMovimentosValidos(i) {
+            const peca = damaEstado.board[i];
+            if (!peca || peca === '.') return [];
+            const minhaCor = (damaEstado.player1.uid === meuId) ? 'r' : 'b';
+            const isDama = (peca === 'R' || peca === 'B');
+            const { row, col } = indiceParaCoord(i);
+            const mov = [];
+            let dirs = [];
+            if (isDama) dirs = [[-1,-1],[-1,1],[1,-1],[1,1]];
+            else if (minhaCor === 'r') dirs = [[-1,-1],[-1,1]];
+            else dirs = [[1,-1],[1,1]];
+            for (const [dr, dc] of dirs) {
+                let r = row + dr, c = col + dc;
+                while (r >= 0 && r <= 7 && c >= 0 && c <= 7) {
+                    const idx = coordParaIndice(r, c);
+                    if (damaEstado.board[idx] === '.') {
+                        mov.push(idx);
+                        if (!isDama) break;
+                    } else {
+                        if (damaEstado.board[idx].toLowerCase() !== minhaCor) {
+                            const nr = r + dr, nc = c + dc;
+                            if (nr >= 0 && nr <= 7 && nc >= 0 && nc <= 7) {
+                                const idx2 = coordParaIndice(nr, nc);
+                                if (damaEstado.board[idx2] === '.') mov.push(idx2);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            return mov;
+        }
+
+        async function executarMovimento(de, para) {
+            const board = [...damaEstado.board];
+            const peca = board[de];
+            const minhaCor = (damaEstado.player1.uid === meuId) ? 'r' : 'b';
+            const { row: fr, col: fc } = indiceParaCoord(de);
+            const { row: tr, col: tc } = indiceParaCoord(para);
+            const dr = tr - fr, dc = tc - fc;
+            if (Math.abs(dr) >= 2 && Math.abs(dc) >= 2) {
+                const stepR = dr > 0 ? 1 : -1, stepC = dc > 0 ? 1 : -1;
+                let cr = fr + stepR, cc = fc + stepC;
+                while (cr !== tr && cc !== tc) {
+                    const ci = coordParaIndice(cr, cc);
+                    if (board[ci] !== '.') board[ci] = '.';
+                    cr += stepR; cc += stepC;
+                }
+            }
+            board[para] = peca;
+            board[de] = '.';
+            if (peca === 'r' && tr === 0) board[para] = 'R';
+            if (peca === 'b' && tr === 7) board[para] = 'B';
+            const advCor = (minhaCor === 'r') ? 'b' : 'r';
+            const temAdv = board.some(p => p.toLowerCase() === advCor);
+            const temEu = board.some(p => p.toLowerCase() === minhaCor);
+            let updateData = {
+                board: boardParaString(board),
+                turno: (damaEstado.turno === damaEstado.player1.uid) ? damaEstado.player2.uid : damaEstado.player1.uid,
+                timerStart: Date.now()
+            };
+            if (!temAdv) { updateData.status = 'finished'; updateData.vencedor = meuId; }
+            else if (!temEu) { updateData.status = 'finished'; updateData.vencedor = (damaEstado.player1.uid === meuId) ? damaEstado.player2.uid : damaEstado.player1.uid; }
+            try {
+                await update(ref(db, 'checkers/' + damaEstado.gameId), updateData);
+                if (updateData.status === 'finished') {
+                    const nomeVenc = (updateData.vencedor === damaEstado.player1.uid) ? damaEstado.player1.nome : damaEstado.player2.nome;
+                    enviarMensagemChatDamaSys(`🏆 ${nomeVenc} venceu a partida!`);
+                }
+            } catch (e) { alert("Erro ao mover: " + e.message); }
+        }
+
+        function renderizarChatDama(msgs) {
+            const chatEl = document.getElementById('dama-chat');
+            chatEl.innerHTML = '';
+            const arr = Object.entries(msgs).map(([id, d]) => ({ id, ...d })).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            arr.forEach(m => {
+                const d = document.createElement('div');
+                if (m.tipo === 'sistema') {
+                    d.className = 'dm sys';
+                    d.innerText = m.texto;
+                } else {
+                    const isMeu = m.idAutor === meuId;
+                    d.className = 'dm ' + (isMeu ? 'me' : 'other');
+                    d.innerHTML = `<div class="au">${m.autor}</div><div>${formatarTexto(m.texto)}</div>`;
+                }
+                chatEl.appendChild(d);
+            });
+            chatEl.scrollTop = chatEl.scrollHeight;
+        }
+
+        function enviarMensagemChatDama() {
+            const inp = document.getElementById('dama-chat-input');
+            const txt = inp.value.trim();
+            if (!txt || !damaEstado.gameId) return;
+            set(push(ref(db, 'checkers/' + damaEstado.gameId + '/chat')), {
+                tipo: 'user', autor: meuNome, idAutor: meuId, texto: txt, timestamp: serverTimestamp()
+            });
+            inp.value = '';
+        }
+
+        function enviarMensagemChatDamaSys(texto) {
+            if (!damaEstado.gameId) return;
+            set(push(ref(db, 'checkers/' + damaEstado.gameId + '/chat')), {
+                tipo: 'sistema', autor: 'Sistema', idAutor: 'sys', texto: texto, timestamp: serverTimestamp()
+            });
+        }
+
+        function configurarListenerPartidasAbertas() {
+            if (damaEstado.partidasAbertasListener) off(damaEstado.partidasAbertasListener);
+            damaEstado.partidasAbertasListener = ref(db, 'checkers');
+            onValue(damaEstado.partidasAbertasListener, (snap) => {
+                const todos = snap.val() || {};
+                damaEstado.partidasAbertas = {};
+                for (const gid in todos) {
+                    const j = todos[gid];
+                    if (j.status === 'playing' && j.player1 && j.player2) {
+                        damaEstado.partidasAbertas[gid] = j;
+                    }
+                }
+                renderizarPartidasNasSalas();
+            });
+        }
+
+        function renderizarPartidasNasSalas() {
+            const cont = document.getElementById('damas-abertas-list');
+            if (!cont) return;
+            cont.innerHTML = '';
+            const abertas = Object.entries(damaEstado.partidasAbertas || {});
+            if (abertas.length === 0) return;
+            abertas.forEach(([gid, j]) => {
+                const li = document.createElement('li');
+                li.className = 'contact-item';
+                li.style.cursor = 'pointer';
+                li.style.background = '#fff8e1';
+                li.onclick = () => entrarComoEspectador(gid);
+                const souPlayer = (j.player1.uid === meuId || j.player2.uid === meuId);
+                li.innerHTML = `
+                    <span style="font-size:16px;">🎮</span>
+                    <div class="contact-info" style="display:flex; flex-direction:column; flex:1; min-width:0;">
+                        <strong style="color:#9b59b6; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Dama: ${j.player1.nome} vs ${j.player2.nome}</strong>
+                        <span style="font-size:10px; color:#666;">${souPlayer ? '▶ Sua partida — clique para voltar' : '👀 Assistir'}</span>
+                    </div>
+                `;
+                cont.appendChild(li);
+            });
+        }
+
+        function entrarComoEspectador(gameId) { abrirJogoDama(gameId); }
     </script>
 </body>
 </html>
