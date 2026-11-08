@@ -2194,27 +2194,46 @@ function fecharJogoDama() {
             document.getElementById('dama-info-vez').innerText = vez;
         }
 
-        function iniciarTimerDisplay() {
-            clearInterval(damaEstado.timerInterval);
-            if (damaEstado.status !== 'playing') return;
-            const el = document.getElementById('dama-info-timer');
-            const atualizar = () => {
-                if (!damaEstado.timerStart) { el.innerText = ''; return; }
-                const decorrido = Math.floor((Date.now() - damaEstado.timerStart) / 1000);
-                const restante = Math.max(0, DAMA_TEMPO_JOGADA - decorrido);
-                el.innerText = `⏱ ${restante}s`;
-                if (restante === 0 && damaEstado.turno === meuId) passarVezAutomatico();
-            };
-            atualizar();
-            damaEstado.timerInterval = setInterval(atualizar, 500);
-        }
+function iniciarTimerDisplay() {
+    // 🛡️ Só cria o interval UMA vez por partida
+    if (damaEstado.timerInterval) return;
+    if (damaEstado.status !== 'playing') return;
 
-        async function passarVezAutomatico() {
-            if (damaEstado.status !== 'playing' || damaEstado.turno !== meuId) return;
-            const p1 = damaEstado.player1, p2 = damaEstado.player2;
-            const adv = (damaEstado.turno === p1.uid) ? p2.uid : p1.uid;
-            try { await update(ref(db, 'checkers/' + damaEstado.gameId), { turno: adv, timerStart: Date.now() }); } catch (e) {}
-        }
+    const el = document.getElementById('dama-info-timer');
+    const atualizar = () => {
+        if (!damaEstado.timerStart) { el.innerText = ''; return; }
+        const decorrido = Math.floor((Date.now() - damaEstado.timerStart) / 1000);
+        const restante = Math.max(0, DAMA_TEMPO_JOGADA - decorrido);
+        el.innerText = `⏱ ${restante}s`;
+        if (restante === 0 && damaEstado.turno === meuId) passarVezAutomatico();
+    };
+    atualizar();
+    damaEstado.timerInterval = setInterval(atualizar, 500);
+}
+
+async function passarVezAutomatico() {
+    if (damaEstado.status !== 'playing' || damaEstado.turno !== meuId) return;
+    if (!damaEstado.gameId) return;
+
+    // 🛡️ TRAVA: só passa a vez se o timer realmente estourou E ainda estamos no turno
+    const decorrido = Math.floor((Date.now() - damaEstado.timerStart) / 1000);
+    if (decorrido < DAMA_TEMPO_JOGADA) return;
+
+    // 🛡️ TRAVA: marca imediatamente que já passou a vez localmente para evitar disparo duplo
+    if (damaEstado._passandoVez) return;
+    damaEstado._passandoVez = true;
+
+    const p1 = damaEstado.player1, p2 = damaEstado.player2;
+    const adv = (damaEstado.turno === p1.uid) ? p2.uid : p1.uid;
+    try {
+        await update(ref(db, 'checkers/' + damaEstado.gameId), { turno: adv, timerStart: Date.now() });
+        enviarMensagemChatDamaSys(`⏱ Tempo esgotado! Vez de ${adv === p1.uid ? p1.nome : p2.nome}`);
+    } catch (e) {
+        console.warn("[Dama] Erro ao passar vez:", e);
+    } finally {
+        setTimeout(() => { damaEstado._passandoVez = false; }, 1500);
+    }
+}
 
         function desenharTabuleiro() {
             const canvas = document.getElementById('dama-canvas');
@@ -2247,39 +2266,46 @@ function fecharJogoDama() {
                 }
             }
         }
+function configurarCliqueCanvas() {
+    const canvas = document.getElementById('dama-canvas');
+    if (!canvas) return;
+    canvas.onclick = (e) => {
+        if (damaEstado.status !== 'playing' || damaEstado.turno !== meuId) return;
+        if (damaEstado.player1.uid !== meuId && damaEstado.player2.uid !== meuId) return;
 
-        function configurarCliqueCanvas() {
-            const canvas = document.getElementById('dama-canvas');
-            if (!canvas) return;
-            canvas.onclick = (e) => {
-                if (damaEstado.status !== 'playing' || damaEstado.turno !== meuId) return;
-                if (damaEstado.player1.uid !== meuId && damaEstado.player2.uid !== meuId) return;
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left, y = e.clientY - rect.top;
-                const size = rect.width / 8;
-                const col = Math.floor(x / size), row = Math.floor(y / size);
-                if (col < 0 || col > 7 || row < 0 || row > 7) return;
-                const i = coordParaIndice(row, col);
-                if (damaEstado.movimentosValidos.includes(i)) {
-                    executarMovimento(damaEstado.selecionada, i);
-                    damaEstado.selecionada = null;
-                    damaEstado.movimentosValidos = [];
-                    desenharTabuleiro();
-                    return;
-                }
-                const peca = damaEstado.board[i];
-                const minhaCor = (damaEstado.player1.uid === meuId) ? 'r' : 'b';
-                if (peca.toLowerCase() === minhaCor) {
-                    damaEstado.selecionada = i;
-                    damaEstado.movimentosValidos = calcularMovimentosValidos(i);
-                    desenharTabuleiro();
-                } else {
-                    damaEstado.selecionada = null;
-                    damaEstado.movimentosValidos = [];
-                    desenharTabuleiro();
-                }
-            };
+        // 🛡️ TRAVA: enquanto o movimento está indo pro banco, ignora cliques
+        if (damaEstado._enviandoMov) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left, y = e.clientY - rect.top;
+        const size = rect.width / 8;
+        const col = Math.floor(x / size), row = Math.floor(y / size);
+        if (col < 0 || col > 7 || row < 0 || row > 7) return;
+        const i = coordParaIndice(row, col);
+
+        if (damaEstado.movimentosValidos.includes(i)) {
+            damaEstado._enviandoMov = true;
+            executarMovimento(damaEstado.selecionada, i);
+            damaEstado.selecionada = null;
+            damaEstado.movimentosValidos = [];
+            desenharTabuleiro();
+            setTimeout(() => { damaEstado._enviandoMov = false; }, 500);
+            return;
         }
+
+        const peca = damaEstado.board[i];
+        const minhaCor = (damaEstado.player1.uid === meuId) ? 'r' : 'b';
+        if (peca.toLowerCase() === minhaCor) {
+            damaEstado.selecionada = i;
+            damaEstado.movimentosValidos = calcularMovimentosValidos(i);
+            desenharTabuleiro();
+        } else {
+            damaEstado.selecionada = null;
+            damaEstado.movimentosValidos = [];
+            desenharTabuleiro();
+        }
+    };
+}
 
         function calcularMovimentosValidos(i) {
             const peca = damaEstado.board[i];
