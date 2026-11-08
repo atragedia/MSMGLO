@@ -2029,29 +2029,58 @@
         }
         function fecharDesafiarDama() { document.getElementById('modal-desafiar-dama').classList.add('hidden'); }
 
-        async function enviarDesafioDama() {
-            const sel = document.getElementById('dama-select-adversario');
-            const idAlvo = sel.value;
-            const nomeAlvo = sel.options[sel.selectedIndex].text;
-            if (!idAlvo) return alert("Escolha um adversário.");
-            if (idAlvo === meuId) return alert("Você não pode se desafiar.");
-            const gameRef = push(ref(db, 'checkers'));
-            const gameId = gameRef.key;
-            const dados = {
-                player1: { uid: meuId, nome: meuNome },
-                player2: { uid: idAlvo, nome: nomeAlvo },
-                status: 'waiting',
-                board: boardParaString(tabuleiroInicial()),
-                turno: meuId,
-                timerStart: 0,
-                criadoEm: serverTimestamp()
-            };
-            try {
-                await set(gameRef, dados);
-                fecharDesafiarDama();
-                mostrarToastCustom(`♟️ Desafio enviado para <strong>${nomeAlvo}</strong>`, '#9b59b6');
-            } catch (e) { alert("Erro ao criar partida: " + e.message); }
-        }
+async function enviarDesafioDama() {
+    const sel = document.getElementById('dama-select-adversario');
+    const idAlvo = sel.value;
+    const nomeAlvo = sel.options[sel.selectedIndex].text;
+    if (!idAlvo) return alert("Escolha um adversário.");
+    if (idAlvo === meuId) return alert("Você não pode se desafiar.");
+    const gameRef = push(ref(db, 'checkers'));
+    const gameId = gameRef.key;
+    const dados = {
+        player1: { uid: meuId, nome: meuNome },
+        player2: { uid: idAlvo, nome: nomeAlvo },
+        status: 'waiting',
+        board: boardParaString(tabuleiroInicial()),
+        turno: meuId,
+        timerStart: 0,
+        criadoEm: serverTimestamp()
+    };
+    try {
+        await set(gameRef, dados);
+        fecharDesafiarDama();
+        mostrarToastCustom(`♟️ Desafio enviado para <strong>${nomeAlvo}</strong>... Aguardando aceitar.`, '#9b59b6');
+
+        // 👇 NOVO: desafiante escuta a partida e abre o tabuleiro quando o outro aceitar
+        damaEstado.status = 'waiting';
+        if (damaEstado.listenerJogo) off(damaEstado.listenerJogo);
+        damaEstado.listenerJogo = ref(db, 'checkers/' + gameId);
+        let jaAbriu = false;
+
+        onValue(damaEstado.listenerJogo, (snap) => {
+            const j = snap.val();
+            if (!j) {
+                // desafiado recusou → partida apagada
+                if (!jaAbriu && damaEstado.status === 'waiting') {
+                    mostrarToastCustom('❌ Desafio recusado.', '#e81123');
+                }
+                if (damaEstado.listenerJogo) { off(damaEstado.listenerJogo); damaEstado.listenerJogo = null; }
+                damaEstado.status = 'idle';
+                damaEstado.gameId = null;
+                return;
+            }
+            if (j.status === 'playing' && !jaAbriu) {
+                jaAbriu = true;
+                damaEstado.gameId = gameId;
+                // Reaproveita a função abrirJogoDama, que já configura listener próprio
+                // mas antes desconecta este listener provisório para não duplicar
+                off(damaEstado.listenerJogo);
+                damaEstado.listenerJogo = null;
+                abrirJogoDama(gameId);
+            }
+        });
+    } catch (e) { alert("Erro ao criar partida: " + e.message); }
+}
 
         function configurarListenerDesafios() {
             if (damaEstado.desafioListener) off(damaEstado.desafioListener);
@@ -2136,16 +2165,16 @@
             iniciarTimerDisplay();
         }
 
-        function fecharJogoDama() {
-            document.getElementById('modal-dama-jogo').classList.add('hidden');
-            if (damaEstado.listenerJogo) { off(damaEstado.listenerJogo); damaEstado.listenerJogo = null; }
-            if (damaEstado.listenerChat) { off(damaEstado.listenerChat); damaEstado.listenerChat = null; }
-            clearInterval(damaEstado.timerInterval);
-            damaEstado.gameId = null;
-            damaEstado.status = 'idle';
-            damaEstado.selecionada = null;
-            damaEstado.movimentosValidos = [];
-        }
+function fecharJogoDama() {
+    document.getElementById('modal-dama-jogo').classList.add('hidden');
+    if (damaEstado.listenerJogo) { off(damaEstado.listenerJogo); damaEstado.listenerJogo = null; }
+    if (damaEstado.listenerChat) { off(damaEstado.listenerChat); damaEstado.listenerChat = null; }
+    clearInterval(damaEstado.timerInterval);
+    damaEstado.gameId = null;
+    damaEstado.status = 'idle';
+    damaEstado.selecionada = null;
+    damaEstado.movimentosValidos = [];
+}
 
         function atualizarUIGeral() {
             const p1 = damaEstado.player1, p2 = damaEstado.player2;
