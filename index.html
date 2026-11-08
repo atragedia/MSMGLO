@@ -639,26 +639,47 @@
         const audioPromocaoAdm = document.getElementById('som-promocao-adm');
         const audioAlertaAdm = document.getElementById('som-alerta-adm');
 
-        let audioDesbloqueado = false;
+ let audioDesbloqueado = false;
+let audioDesbloqueando = false;
 
-        function desbloquearTodosAudios() {
-            if (audioDesbloqueado) return;
-            const lista = [audioLogin, audioAlerta, audioEnvio, audioEnvioRemetente, audioPeido, audioOnline, audioPromocaoAdm, audioAlertaAdm];
-            let sucesso = false;
-            lista.forEach(a => {
-                if (!a) return;
-                try {
-                    const volOrig = a.volume, mutedOrig = a.muted;
-                    a.volume = 0; a.muted = true;
-                    const p = a.play();
-                    if (p !== undefined) {
-                        p.then(() => { sucesso = true; a.pause(); a.currentTime = 0; a.volume = volOrig; a.muted = mutedOrig; })
-                         .catch(() => { a.volume = volOrig; a.muted = mutedOrig; });
-                    }
-                } catch (e) {}
-            });
-            if (sucesso) { audioDesbloqueado = true; console.log("[Áudio] ✅ Desbloqueado"); }
+function desbloquearTodosAudios() {
+    if (audioDesbloqueado || audioDesbloqueando) return;
+    audioDesbloqueando = true;
+
+    const lista = [audioLogin, audioAlerta, audioEnvio, audioEnvioRemetente, audioPeido, audioOnline, audioPromocaoAdm, audioAlertaAdm];
+    let sucessos = 0;
+
+    lista.forEach(a => {
+        if (!a) return;
+        try {
+            a.volume = 0;
+            a.muted = true;
+            const p = a.play();
+            if (p !== undefined) {
+                p.then(() => {
+                    sucessos++;
+                    a.pause();
+                    a.currentTime = 0;
+                    a.volume = 1;      // ← SEMPRE restaura pra 1 (não pra volOrig)
+                    a.muted = false;   // ← SEMPRE desmuta (não pra mutedOrig)
+                }).catch(() => {
+                    a.volume = 1;
+                    a.muted = false;
+                });
+            }
+        } catch (e) {
+            a.volume = 1; a.muted = false;
         }
+    });
+
+    setTimeout(() => {
+        if (sucessos > 0) {
+            audioDesbloqueado = true;
+            console.log("[Áudio] ✅ Desbloqueado (" + sucessos + "/8)");
+        }
+        audioDesbloqueando = false;
+    }, 300);
+}
 
         document.addEventListener('click', desbloquearTodosAudios);
         document.addEventListener('touchstart', desbloquearTodosAudios, { passive: true });
@@ -667,11 +688,16 @@
         function tocarAudio(el) {
             if (!el) return;
             try {
-                el.pause(); el.currentTime = 0;
+                // 🛡️ Rede de segurança: se algum áudio ficou mudo/zerado por bug antigo, restaura aqui
+                if (el.muted) el.muted = false;
+                if (el.volume === 0) el.volume = 1;
+
+                el.pause();
+                el.currentTime = 0;
                 const p = el.play();
                 if (p !== undefined) p.catch(e => {
-                    console.warn("[Áudio] Bloqueado:", el.id, "—", e.name);
-                    if (e.name === 'NotAllowedError' && !audioDesbloqueado) desbloquearTodosAudios();
+                console.warn("[Áudio] Bloqueado:", el.id, "—", e.name);
+                if (e.name === 'NotAllowedError' && !audioDesbloqueado) desbloquearTodosAudios();
                 });
             } catch (e) { console.warn("[Áudio] Erro:", el.id, e); }
         }
