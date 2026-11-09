@@ -628,7 +628,8 @@
                 <p style="font-size:11px; color:#666; margin:0 0 10px 0;">Escolha um usuário online</p>
                 <select id="dama-select-adversario"></select>
                 <button class="btn-add-friend-modal" onclick="enviarDesafioDama()">Enviar Desafio</button>
-                <button class="btn-cancelar" onclick="cancelarDesafioPendente()">Cancelar</button>
+                <button class="btn-cancelar" onclick="fecharDesafiarDama()">Cancelar</button>
+            </div>
         </div>
 
         <div id="modal-receber-desafio" class="hidden">
@@ -2026,17 +2027,7 @@
             if (!tem) return alert("Ninguém online para desafiar! 😢");
             document.getElementById('modal-desafiar-dama').classList.remove('hidden');
         }
-function fecharDesafiarDama() { document.getElementById('modal-desafiar-dama').classList.add('hidden'); }
-
-function cancelarDesafioPendente() {
-    fecharDesafiarDama();
-    if (damaEstado.status === 'waiting' && damaEstado.gameId) {
-        remove(ref(db, 'checkers/' + damaEstado.gameId)).catch(()=>{});
-        damaEstado.gameId = null;
-        damaEstado.status = 'idle';
-    }
-    if (damaEstado.listenerJogo) { off(damaEstado.listenerJogo); damaEstado.listenerJogo = null; }
-}
+        function fecharDesafiarDama() { document.getElementById('modal-desafiar-dama').classList.add('hidden'); }
 
 async function enviarDesafioDama() {
     const sel = document.getElementById('dama-select-adversario');
