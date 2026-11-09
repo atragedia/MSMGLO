@@ -1,0 +1,2461 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MSM GLOBAL</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, set, update, onValue, onDisconnect, remove, serverTimestamp, off, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, setPersistence, browserLocalPersistence, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBIR5Fq5yem9xjolIhgkLd9M5JVGWb_llI",
+            authDomain: "msn-tcc.firebaseapp.com",
+            databaseURL: "https://msn-tcc-default-rtdb.firebaseio.com",
+            projectId: "msn-tcc",
+            storageBucket: "msn-tcc.firebasestorage.app",
+            messagingSenderId: "834586340778",
+            appId: "1:834586340778:web:3d363296bc7e9a7bc64fd3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        setPersistence(auth, browserLocalPersistence).catch(e => console.error("Persistência:", e));
+
+        window.db = db; window.ref = ref; window.push = push; window.set = set; window.update = update;
+        window.onValue = onValue; window.onDisconnect = onDisconnect; window.remove = remove;
+        window.serverTimestamp = serverTimestamp; window.off = off; window.get = get;
+        window.auth = auth; window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword; window.sendPasswordResetEmail = sendPasswordResetEmail;
+        window.onAuthStateChanged = onAuthStateChanged; window.signOut = signOut;
+        window.EmailAuthProvider = EmailAuthProvider;
+        window.reauthenticateWithCredential = reauthenticateWithCredential;
+        window.updatePassword = updatePassword;
+
+        window.dispatchEvent(new Event('firebaseReady'));
+    </script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #8ab4f8; background-image: url('https://images.unsplash.com/photo-1554034483-04fda0d3507b?q=80&w=2000&auto=format&fit=crop'); background-size: cover; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; overflow: hidden; }
+        .logo-magica { mix-blend-mode: multiply; }
+        .msn-window { width: 850px; height: 600px; background: #e3efff; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #99bce8; position: relative; }
+        .title-bar { background: linear-gradient(to bottom, #d1e0f5, #a7c8f0); height: 38px; display: flex; justify-content: space-between; align-items: center; padding: 0 8px; border-bottom: 1px solid #8ab4f8; flex-shrink: 0; gap: 6px; }
+        .title-text { font-weight: bold; color: #003366; font-size: 13px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .title-text img { height: 26px; width: auto; }
+
+        .top-tabs { display: flex; gap: 4px; flex: 1; justify-content: center; overflow: hidden; }
+        .top-tab { background: linear-gradient(to bottom, #e3efff, #c5d9f0); border: 1px solid #7f9db9; border-radius: 4px; padding: 3px 10px; font-size: 11px; font-weight: bold; color: #003366; cursor: pointer; white-space: nowrap; transition: 0.15s; display: flex; align-items: center; gap: 3px; }
+        .top-tab:hover { background: linear-gradient(to bottom, #f0f5fc, #d1e0f5); }
+        .top-tab.active { background: white; color: #003366; border-bottom-color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+
+        .window-controls { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+        .win-btn { width: 20px; height: 20px; border-radius: 3px; border: 1px solid #7f9db9; background: #d1e0f5; cursor: pointer; font-size: 10px; display: flex; justify-content: center; align-items: center; font-weight: bold;}
+        .win-btn.close { background: #e81123; color: white; border-color: #c50f1f; }
+
+        .main-area { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+        .sidebar { width: 260px; background: white; border-right: 1px solid #b2c7e3; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; min-height: 0; }
+        .sidebar-view { display: flex; flex-direction: column; }
+        .user-profile { padding: 10px; background: #f0f5fc; border-bottom: 1px solid #d1e0f5; text-align: center; flex-shrink: 0;}
+
+        .avatar { width: 60px; height: 60px; background: #a7c8f0; border-radius: 5px; margin: 0 auto 5px; display: flex; justify-content: center; align-items: center; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; cursor: pointer; position: relative;}
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar:hover::after { content: '📷 Trocar'; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); color: white; display: flex; justify-content: center; align-items: center; font-size: 10px; font-weight: bold; }
+
+        .user-name-display { font-weight: bold; color: #003366; font-size: 13px; margin-bottom: 5px; display: flex; justify-content: center; align-items: center; gap: 4px;}
+        .user-name-edit { cursor: pointer; padding: 0 3px; border-radius: 3px; }
+        .user-name-edit:hover { background: #d1e0f5; }
+        .gear-icon { cursor: pointer; padding: 2px 3px; font-size: 13px; border-radius: 3px; transition: 0.2s; line-height: 1; }
+        .gear-icon:hover { background: #d1e0f5; transform: rotate(45deg); }
+        .btn-sair { font-size: 10px; background: #e81123; color: white; border: none; border-radius: 3px; padding: 2px 6px; cursor: pointer; }
+        .status-selector { width: 95%; padding: 3px; margin-bottom: 5px; border: 1px solid #99bce8; border-radius: 3px; font-size: 11px; color: #003366; background: white; cursor: pointer; outline: none; }
+        .user-recado { font-size: 11px; color: #666; font-style: italic; width: 95%; border: 1px solid #ccc; padding: 3px; box-sizing: border-box; border-radius: 3px;}
+
+        .contacts-header { background: #e3efff; padding: 5px 10px; font-size: 11px; font-weight: bold; color: #003366; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #b2c7e3; border-top: 1px solid #b2c7e3; flex-shrink: 0; gap: 5px; }
+        .btn-add-friend-top { background: #4caf50; color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 14px; line-height: 1; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; padding: 0; flex-shrink: 0; }
+        .btn-add-friend-top:hover { background: #388e3c; }
+        .btn-add-room { color: #4caf50; font-size: 16px; font-weight: bold; cursor: pointer; padding: 0 5px; }
+        .btn-add-room:hover { color: #388e3c; }
+
+        .search-wrap { padding: 4px 8px; background: #f0f5fc; border-bottom: 1px solid #d1e0f5; flex-shrink: 0; }
+        .search-input { width: 100%; padding: 4px 8px; border: 1px solid #99bce8; border-radius: 3px; font-size: 11px; box-sizing: border-box; outline: none; }
+        .search-input:focus { border-color: #4caf50; }
+        .sala-search-wrap { padding: 4px 8px; background: #f0f5fc; border-bottom: 1px solid #d1e0f5; flex-shrink: 0; }
+        .sala-search-input { width: 100%; padding: 4px 8px; border: 1px solid #99bce8; border-radius: 3px; font-size: 11px; box-sizing: border-box; outline: none; }
+        .sala-search-input:focus { border-color: #4caf50; }
+
+        .contact-list { list-style: none; padding: 0; margin: 0; min-height: 40px; flex-shrink: 0; overflow-y: auto; }
+        .contact-item { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; font-size: 12px; color: #333; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+        .contact-item:hover { background: #f0f5fc; }
+        .contact-item.offline .contact-info { opacity: 0.5; }
+        .btn-ver-mais { padding: 5px 10px; text-align: center; font-size: 11px; color: #003366; background: #f0f5fc; border-bottom: 1px solid #d1e0f5; cursor: pointer; font-weight: bold; user-select: none; display: block; text-decoration: underline; }
+        .btn-ver-mais:hover { background: #e3efff; }
+        .btn-add-friend { background: #4caf50; color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 14px; line-height: 1; display: flex; justify-content: center; align-items: center; cursor: pointer; margin-left: auto; }
+        .btn-add-friend:hover { background: #388e3c; }
+        .btn-remove-friend { background: transparent; color: #ccc; border: none; font-size: 14px; font-weight: bold; cursor: pointer; padding: 0 5px; margin-left: auto; }
+        .contact-item:hover .btn-remove-friend { color: #e81123; }
+        .btn-remove-room { background: transparent; color: #ccc; border: none; font-size: 12px; cursor: pointer; padding: 0 4px; }
+        .contact-item:hover .btn-remove-room { color: #e81123; }
+        .btn-edit-room { background: transparent; color: #ccc; border: none; font-size: 12px; cursor: pointer; padding: 0 4px; }
+        .contact-item:hover .btn-edit-room { color: #f39c12; }
+
+        .status-icon { width: 10px; height: 10px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,0.2); flex-shrink: 0;}
+        .status-online { background: #4caf50; } .status-ausente { background: #ffeb3b; } .status-ocupado { background: #f44336; } .status-invisivel { background: #bdc3c7; } .status-offline { background: #95a5a6; }
+
+        .chat-area { flex: 1; display: flex; flex-direction: column; background: white; overflow: hidden; min-height: 0; }
+        .tab-bar { display: flex; background: #d1e0f5; border-bottom: 1px solid #99bce8; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
+        .tab-bar::-webkit-scrollbar { display: none; }
+        .tab { padding: 6px 12px; background: #e3efff; border-right: 1px solid #99bce8; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 120px; max-width: 200px; white-space: nowrap; color: #555; user-select: none; }
+        .tab.active { background: white; border-bottom: 2px solid white; margin-bottom: -1px; font-weight: bold; color: #003366; }
+        .tab.unread { background: #ffe6e6; color: #c0392b; font-weight: bold; border-bottom: 2px solid #e81123; }
+        .tab-close { font-size: 10px; background: #ccc; border-radius: 50%; width: 16px; height: 16px; display: flex; justify-content: center; align-items: center; margin-left: auto; color: white; }
+        .tab-close:hover { background: #e81123; }
+        .tab.unread .tab-close { background: #e81123; color: white; animation: pulse 1s infinite; }
+
+        #chat-header { display: none; padding: 10px 15px; background: #f0f5fc; border-bottom: 2px solid #d1e0f5; align-items: center; gap: 15px; }
+        #chat-header img { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .chat-header-info { display: flex; flex-direction: column; }
+        .chat-header-info strong { color: #003366; font-size: 16px; }
+        .chat-header-info span { font-size: 12px; color: #666; font-style: italic; }
+        #digitando-aviso { font-size: 10px; color: #e67e22; font-weight: bold; height: 12px; margin-top: 2px; display: none;}
+
+        .chat-history { flex: 1; padding: 15px; overflow-y: auto; background: #ffffff; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+        .msg { max-width: 80%; padding: 8px 12px; border-radius: 5px; font-size: 13px; line-height: 1.4; word-wrap: break-word; }
+        .msg.sent { align-self: flex-end; background: #dcf8c6; border: 1px solid #c4e8a9; }
+        .msg.received { align-self: flex-start; background: #f0f5fc; border: 1px solid #d1e0f5; }
+        .msg-sender { font-size: 10px; color: #666; margin-bottom: 3px; font-weight: bold; }
+        .msg-time { font-size: 9px; color: #999; text-align: right; margin-top: 3px; }
+        .msg-img { max-width: 100%; border-radius: 5px; margin-top: 5px; cursor: pointer; display: block; border: 1px solid #ddd; }
+
+        .typing-area { padding: 10px; background: #e3efff; border-top: 1px solid #b2c7e3; display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
+        .toolbar { display: flex; gap: 5px; flex-wrap: wrap; }
+        .toolbar button { background: #d1e0f5; border: 1px solid #99bce8; border-radius: 3px; cursor: pointer; padding: 3px 8px; font-size: 14px; }
+        .toolbar button:hover { background: #a7c8f0; }
+        .input-row { display: flex; gap: 10px; }
+        .chat-input { flex: 1; padding: 10px; border: 1px solid #99bce8; border-radius: 4px; font-family: inherit; font-size: 13px; resize: none; height: 40px; }
+        .send-btn { background: linear-gradient(to bottom, #f0f5fc, #d1e0f5); border: 1px solid #99bce8; border-radius: 4px; padding: 0 20px; font-weight: bold; color: #003366; cursor: pointer; }
+
+        .admin-box { background: #2c3e50; padding: 20px; border-radius: 8px; border: 2px solid #f1c40f; width: 560px; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
+        .admin-box h2 { color: #f1c40f; margin-top: 0; }
+        .admin-box input[type="text"], .admin-box input[type="search"] { color: #333 !important; font-family: inherit !important; }
+        .admin-section { background: #34495e; padding: 10px; border-radius: 5px; margin: 12px 0; text-align: left; }
+        .admin-section h3 { margin: 0 0 8px 0; font-size: 13px; color: #f1c40f; }
+        .admin-user-list { list-style: none; padding: 0; margin: 10px 0; text-align: left; }
+        .admin-user-item { display: flex; justify-content: space-between; align-items: center; background: #34495e; padding: 10px; border-radius: 5px; margin-bottom: 8px; border-left: 4px solid #3498db; flex-wrap: wrap; gap: 5px; }
+        .admin-user-info { display: flex; flex-direction: column; flex: 1; min-width: 180px; }
+        .admin-user-info strong { font-size: 13px; color: #ecf0f1; }
+        .admin-user-info span { font-size: 10px; color: #bdc3c7; }
+        .admin-actions { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+        .admin-actions button { border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 10px; color: white; }
+        .btn-kick { background: #e67e22; }
+        .btn-aviso { background: #f39c12; }
+        .btn-aviso:hover { background: #e67e22; }
+        .btn-ban-temp { background: #f1c40f; color: #333 !important; }
+        .btn-ban-perm { background: #e81123; }
+        .btn-unban { background: #2ecc71; }
+        .admin-promote-select { padding: 5px 6px; font-size: 10px; border-radius: 3px; border: none; background: #9b59b6; color: white; cursor: pointer; font-weight: bold; }
+        .admin-promote-select:hover { background: #8e44ad; }
+
+        #modal-bloqueio { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #111; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; color: #e74c3c; text-align: center; padding: 20px;}
+        #modal-bloqueio h1 { font-size: 30px; margin-bottom: 10px; }
+        #modal-bloqueio p { font-size: 16px; color: #ccc; max-width: 400px; }
+
+        #modal-admin { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 5000; padding: 20px; }
+        .btn-admin-painel { background: #f1c40f; color: #333; font-weight: bold; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px;}
+        .btn-admin-painel:hover { background: #e67e22; }
+
+        .tela-auth { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
+        .msn-login-window { width: 600px; background: #e3efff; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #99bce8; overflow: hidden; }
+        .msn-login-title { background: linear-gradient(to bottom, #d1e0f5, #a7c8f0); height: 35px; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; color: #003366; font-weight: bold; font-size: 13px; border-bottom: 1px solid #8ab4f8; }
+        .msn-login-body { display: flex; padding: 25px 30px; background: white; gap: 30px; }
+        .msn-login-left { width: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .msn-login-left img { width: 140px; height: 140px; border-radius: 5px; border: 2px solid #d1e0f5; object-fit: cover; }
+        .msn-login-right { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .msn-login-right label { font-size: 12px; color: #333; margin-bottom: 2px; display: block; font-weight: bold;}
+        .msn-login-right input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #7f9db9; border-radius: 3px; font-size: 14px; }
+        .msn-login-right select { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #7f9db9; border-radius: 3px; font-size: 14px; background: white;}
+        .msn-login-footer { background: #f0f5fc; padding: 15px 30px; border-top: 1px solid #b2c7e3; text-align: right; display: flex; justify-content: space-between; align-items: center;}
+        .btn-msn-entrar { background: linear-gradient(to bottom, #f0f5fc, #d1e0f5); border: 1px solid #7f9db9; padding: 10px 35px; border-radius: 4px; font-weight: bold; color: #003366; cursor: pointer; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .btn-msn-entrar:hover { background: linear-gradient(to bottom, #d1e0f5, #a7c8f0); }
+        .msn-login-links { font-size: 12px; text-align: left; }
+        .msn-login-links a { color: #0066cc; text-decoration: none; cursor: pointer; display: block; margin-bottom: 5px;}
+        .msn-login-links a:hover { text-decoration: underline; }
+        .msg-erro { color: #e81123; font-size: 12px; margin-top: 5px; display: none; font-weight: bold; }
+        .msn-register-window { width: 500px; background: #e3efff; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #99bce8; overflow: hidden; }
+        .msn-register-body { padding: 25px 30px; background: white; }
+        .msn-register-body input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #7f9db9; border-radius: 3px; font-size: 14px; box-sizing: border-box;}
+
+        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(227, 239, 255, 0.98); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2500; }
+        .spinner { border: 4px solid #d1e0f5; border-top: 4px solid #003366; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #loading-text { color: #003366; font-weight: bold; font-size: 14px; }
+
+        #modal-dedo, #modal-criar-sala, #modal-editar-sala, #modal-config, #modal-add-amigo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-dedo-box { background: #f0f5fc; padding: 20px; border-radius: 6px; border: 1px solid #99bce8; width: 80%; max-width: 340px; text-align: center; }
+        .modal-dedo-box h3 { margin: 0 0 12px 0; color: #003366; }
+        .modal-dedo-box select, .modal-dedo-box input[type="text"], .modal-dedo-box input[type="password"] { width: 100%; padding: 8px; margin: 4px 0 10px 0; border: 1px solid #99bce8; border-radius: 4px; box-sizing: border-box; font-size: 13px; }
+        .modal-dedo-box label { display: block; text-align: left; font-size: 12px; font-weight: bold; color: #333; margin-top: 6px; }
+        .modal-dedo-box button { width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-enviar-dedo { background: #e81123; color: white; }
+        .btn-criar-sala { background: #4caf50; color: white; }
+        .btn-config { background: #3498db; color: white; }
+        .btn-add-friend-modal { background: #4caf50; color: white; }
+        .btn-cancelar { background: #ccc; color: #333; }
+        .sala-foto-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .sala-foto-preview { width: 64px; height: 64px; border-radius: 6px; object-fit: cover; border: 2px solid #99bce8; cursor: pointer; background: #fff; flex-shrink: 0; }
+        .sala-foto-hint { font-size: 10px; color: #666; text-align: left; line-height: 1.3; }
+
+        #peido-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center; z-index: 8888; cursor: pointer; animation: peidoFadeIn 0.3s ease-out; }
+        .peido-wrapper { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 90%; max-height: 90%; }
+        #peido-video { max-width: 100%; max-height: 70vh; border-radius: 12px; box-shadow: 0 0 40px rgba(0,0,0,0.9), 0 0 20px rgba(76,175,80,0.6); border: 3px solid #4caf50; }
+        .peido-legenda { color: #fff; font-size: 18px; font-weight: bold; text-shadow: 0 2px 8px rgba(0,0,0,0.9); text-align: center; padding: 0 10px; }
+        .peido-hint { color: rgba(255,255,255,0.6); font-size: 10px; font-style: italic; }
+        @keyframes peidoFadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+        /* ==================== DAMAS ==================== */
+        #modal-desafiar-dama, #modal-receber-desafio, #modal-dama-jogo {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center;
+            z-index: 6500;
+        }
+        .dama-box { background: #2c3e50; border: 2px solid #f1c40f; border-radius: 8px; width: 780px; max-width: 95%; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+        .dama-header { background: linear-gradient(to bottom, #d1e0f5, #a7c8f0); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; color: #003366; font-weight: bold; font-size: 14px; }
+        .dama-close { background: #e81123; color: white; border: none; border-radius: 3px; width: 22px; height: 22px; font-weight: bold; cursor: pointer; }
+        .dama-info-bar { background: #34495e; padding: 6px 12px; display: flex; justify-content: space-between; font-size: 12px; color: white; border-bottom: 1px solid #2c3e50; }
+        .dama-content { display: flex; flex: 1; min-height: 0; overflow: hidden; background: #1a252f; }
+        .dama-board-wrap { position: relative; flex-shrink: 0; padding: 10px; display: flex; justify-content: center; align-items: center; }
+        #dama-canvas { background: #f0d9b5; border-radius: 4px; box-shadow: 0 0 15px rgba(0,0,0,0.5); cursor: pointer; max-width: 100%; height: auto; }
+        .dama-side { flex: 1; display: flex; flex-direction: column; background: #ecf0f1; min-width: 0; }
+        .dama-players { display: flex; flex-direction: column; gap: 3px; padding: 6px; background: #bdc3c7; }
+        .dama-player { font-size: 11px; padding: 4px 8px; border-radius: 3px; background: white; display: flex; justify-content: space-between; align-items: center; }
+        .dama-player.ativo { background: #ffeaa7; font-weight: bold; border: 2px solid #f39c12; }
+        .dama-chat { flex: 1; overflow-y: auto; padding: 8px; font-size: 12px; display: flex; flex-direction: column; gap: 4px; min-height: 80px; }
+        .dama-chat .dm { padding: 3px 6px; border-radius: 4px; word-wrap: break-word; }
+        .dama-chat .dm.sys { text-align: center; font-style: italic; color: #7f8c8d; font-size: 10px; }
+        .dama-chat .dm.me { background: #dcf8c6; align-self: flex-end; max-width: 85%; }
+        .dama-chat .dm.other { background: #f0f5fc; align-self: flex-start; max-width: 85%; }
+        .dama-chat .dm .au { font-weight: bold; font-size: 10px; color: #003366; }
+        .dama-chat-input-row { display: flex; gap: 4px; padding: 6px; background: #bdc3c7; border-top: 1px solid #95a5a6; }
+        .dama-chat-input-row input { flex: 1; padding: 6px 8px; border: 1px solid #95a5a6; border-radius: 3px; font-size: 12px; }
+        .dama-chat-input-row button { padding: 6px 12px; background: #4caf50; color: white; border: none; border-radius: 3px; font-weight: bold; cursor: pointer; }
+
+        @media (max-width: 850px) {
+            .dama-box { width: 100%; height: 100dvh; max-height: 100vh; border-radius: 0; }
+            .dama-content { flex-direction: column; }
+            .dama-board-wrap { padding: 5px; }
+            #dama-canvas { width: 260px; height: 260px; }
+            .dama-side { flex-direction: row; height: 45%; min-height: 0; }
+            .dama-players { flex-direction: column; width: 110px; flex-shrink: 0; }
+            .dama-chat { font-size: 11px; }
+            .dama-chat-input-row input { font-size: 14px; }
+        }
+
+        #toast-container { position: absolute; bottom: 20px; right: 20px; z-index: 9000; display: flex; flex-direction: column; gap: 10px; align-items: flex-end;}
+        .toast { background: #333; color: white; padding: 6px 10px; border-radius: 6px; font-size: 11px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 6px; animation: slideIn 0.3s ease-out; border-left: 4px solid #4caf50; max-width: 220px; }
+        .toast.offline-toast { border-left-color: #95a5a6; }
+        .toast.admin-toast { background: linear-gradient(to right, #2c3e50, #34495e); border-left-color: #f1c40f; max-width: 320px; font-size: 11px; }
+        .toast img { width: 16px; height: 16px; }
+        .msn-pm-popup { background: #e3efff; border: 1px solid #99bce8; border-radius: 6px; box-shadow: 0 5px 15px rgba(0,0,0,0.4); width: 250px; animation: slideIn 0.3s ease-out; overflow: hidden; display: flex; flex-direction: column; }
+        .msn-pm-header { background: linear-gradient(to bottom, #d1e0f5, #a7c8f0); padding: 4px 8px; font-size: 11px; font-weight: bold; color: #003366; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #99bce8; }
+        .msn-pm-close { background: #e81123; color: white; border: none; border-radius: 3px; width: 14px; height: 14px; font-size: 10px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; }
+        .msn-pm-body { padding: 10px; background: white; cursor: pointer; transition: 0.2s; }
+        .msn-pm-body:hover { background: #f0f5fc; }
+        .msn-pm-body strong { color: #003366; font-size: 12px; display: block; margin-bottom: 2px;}
+        .msn-pm-body p { margin: 0; font-size: 12px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast.fade-out, .msn-pm-popup.fade-out { animation: slideOut 0.3s ease-in forwards; }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+        .nudge-animation { animation: shake 0.5s; animation-iteration-count: 1; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .hidden { display: none !important; }
+
+        @media (max-width: 850px) {
+            body { align-items: flex-start; }
+            .msn-window { width: 100%; height: 100dvh; border-radius: 0; border: none; }
+            .title-bar { padding: 0 5px; gap: 4px; }
+            .title-text { font-size: 11px; gap: 4px; }
+            .title-text img { height: 20px; }
+            .top-tab { padding: 3px 8px; font-size: 11px; }
+            .tab-label { display: none; }
+            .main-area { flex-direction: column; min-height: 0; }
+            .sidebar { width: 100%; height: 30%; max-height: 200px; border-right: none; border-bottom: 2px solid #99bce8; flex-shrink: 0; overflow-y: auto; }
+            .user-profile { padding: 5px; display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; }
+            .avatar { width: 40px; height: 40px; margin: 0; flex-shrink: 0; }
+            .user-info-mobile { display: flex; flex-direction: column; flex: 1; }
+            .user-name-display { margin-bottom: 2px; justify-content: flex-start;}
+            .status-selector { width: 100%; padding: 2px; margin-bottom: 2px; font-size: 10px;}
+            .user-recado { width: 100%; font-size: 10px; }
+            .contacts-header { padding: 3px 8px; font-size: 10px; }
+            .contact-item { padding: 4px 8px; font-size: 11px; }
+            .chat-area { height: 70%; flex: 1; min-height: 0; }
+            .toolbar button { padding: 6px 10px; font-size: 14px; }
+            .chat-input { font-size: 16px; height: 40px; }
+            #chat-header { padding: 5px 10px; gap: 10px; }
+            #chat-header img { width: 35px; height: 35px; }
+            .chat-header-info strong { font-size: 14px; }
+            .chat-header-info span { font-size: 10px; }
+            #toast-container { bottom: 10px; right: 5px; gap: 5px; }
+            .toast { padding: 4px 6px; font-size: 9px; max-width: 160px; border-left-width: 3px; border-radius: 4px;}
+            .toast.admin-toast { max-width: 200px; }
+            .toast img { width: 12px; height: 12px; }
+            .msn-pm-popup { width: 220px; }
+            .msn-pm-header { padding: 3px 6px; font-size: 10px; }
+            .msn-pm-body { padding: 8px; }
+            .msn-login-window, .msn-register-window { width: 95%; max-width: 400px; }
+            .msn-login-body { flex-direction: column; align-items: center; padding: 15px; gap: 15px; }
+            .msn-login-left { width: 100%; }
+            .msn-login-left img { width: 100px; height: 100px; }
+            .msn-login-right { width: 100%; }
+            .msn-login-footer { padding: 10px 15px; flex-direction: column; gap: 10px; }
+            .btn-msn-entrar { width: 100%; }
+            .admin-box { width: 95%; padding: 12px; }
+            .admin-user-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .admin-actions { width: 100%; }
+            #peido-video { max-height: 55vh; }
+            .peido-legenda { font-size: 14px; }
+        }
+
+        @media (max-width: 500px) {
+            .title-text .title-name { display: none; }
+            .top-tab { padding: 4px 8px; font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="modal-bloqueio" class="hidden">
+        <h1>⛔ ACESSO NEGADO</h1>
+        <p id="motivo-bloqueio">Este dispositivo foi bloqueado permanentemente por violar as regras do MSM GLOBAL.</p>
+        <p style="font-size: 12px; margin-top: 20px;">Se você acredita que isso é um erro, entre em contato com o suporte.</p>
+    </div>
+
+    <audio id="som-login" src="https://www.myinstants.com/media/sounds/msn-messenger.mp3?v=5" preload="auto"></audio>
+    <audio id="som-envio" src="https://www.myinstants.com/media/sounds/msn-sound_1.mp3?v=2" preload="auto"></audio>
+    <audio id="som-envio-remetente" src="https://www.myinstants.com/media/sounds/pling.mp3?v=6" preload="auto"></audio>
+    <audio id="som-alerta" src="https://www.myinstants.com/media/sounds/nudge.mp3?v=1" preload="auto"></audio>
+    <audio id="som-peido" src="https://www.myinstants.com/media/sounds/fart-with-reverb.mp3?v=3" preload="auto"></audio>
+    <audio id="som-online" src="https://www.myinstants.com/media/sounds/msn-online.mp3?v=4" preload="auto"></audio>
+    <audio id="som-promocao-adm" src="https://www.myinstants.com/media/sounds/contact-online-msn-2002-2002.mp3" preload="auto"></audio>
+    <audio id="som-alerta-adm" src="https://www.myinstants.com/media/sounds/new-alert-msn-2002-2002.mp3" preload="auto"></audio>
+
+    <div class="msn-window" id="msn-window">
+        <div class="title-bar">
+            <div class="title-text">
+                <img class="logo-magica" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10" alt="MSN Logo">
+                <span class="title-name">MSM GLOBAL</span>
+            </div>
+            <div class="top-tabs">
+                <button class="top-tab" id="tab-btn-amigos" onclick="mudarAbaTop('amigos')">👥 <span class="tab-label">Amigos</span></button>
+                <button class="top-tab" id="tab-btn-salas" onclick="mudarAbaTop('salas')">🏠 <span class="tab-label">Salas</span></button>
+                <button class="top-tab active" id="tab-btn-global" onclick="mudarAbaTop('global')">🌐 <span class="tab-label">Global</span></button>
+            </div>
+            <div class="window-controls">
+                <button id="btn-admin" class="btn-admin-painel hidden" onclick="abrirPainelAdmin()">🛡️ Painel</button>
+                <div class="win-btn close" onclick="fazerLogout()">X</div>
+            </div>
+        </div>
+
+        <div class="main-area">
+            <div class="sidebar">
+                <div class="user-profile">
+                    <div class="avatar" onclick="document.getElementById('input-avatar').click()">
+                        <img id="my-avatar-img" class="logo-magica" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10" alt="Avatar">
+                    </div>
+                    <input type="file" id="input-avatar" accept="image/*" style="display: none;" onchange="processarEnviarAvatar(event)">
+
+                    <div class="user-info-mobile">
+                        <div class="user-name-display">
+                            <span id="my-name-display" class="user-name-edit" title="Clique para alterar" onclick="editarNomeExibicao()">...</span>
+                            <span class="gear-icon" title="Configurações" onclick="abrirConfiguracoes()">⚙️</span>
+                            <button class="btn-sair" onclick="fazerLogout()">Sair</button>
+                        </div>
+                        <select id="my-status" class="status-selector" onchange="mudarStatus(this.value)">
+                            <option value="online">🟢 Online</option>
+                            <option value="ausente">🟡 Ausente</option>
+                            <option value="ocupado">🔴 Ocupado</option>
+                            <option value="invisivel">⚪ Invisível</option>
+                        </select>
+                        <input type="text" class="user-recado" id="my-recado" placeholder="Seu recado..." maxlength="30" onchange="atualizarRecado()">
+                    </div>
+                </div>
+
+                <div id="view-amigos" class="sidebar-view hidden">
+                    <div class="contacts-header">
+                        <span>Meus Amigos</span>
+                        <span class="btn-add-friend-top" onclick="abrirAddAmigo()" title="Adicionar amigo">+</span>
+                    </div>
+                    <div class="search-wrap">
+                        <input type="text" class="search-input" id="friends-search" placeholder="🔍 Buscar em amigos..." oninput="renderizarListas()">
+                    </div>
+                    <ul class="contact-list" id="my-friends-list"></ul>
+                    <div id="btn-mais-amigos" class="btn-ver-mais hidden" onclick="toggleAmigos()"></div>
+                </div>
+
+                <div id="view-salas" class="sidebar-view hidden">
+                    <div class="contacts-header">
+                        <span>🏠 Salas</span>
+                        <span class="btn-add-room" onclick="abrirCriarSala()" title="Criar nova sala">➕</span>
+                    </div>
+                    <div class="sala-search-wrap">
+                        <input type="text" class="sala-search-input" id="sala-search" placeholder="🔍 Buscar sala..." oninput="renderizarSalas()">
+                    </div>
+                    <ul class="contact-list" id="rooms-list"></ul>
+                </div>
+
+                <div id="view-global" class="sidebar-view">
+                    <div class="contacts-header">
+                        <span>MSM Global (Todos)</span>
+                        <span id="online-count">(0)</span>
+                    </div>
+                    <div class="search-wrap">
+                        <input type="text" class="search-input" id="global-search" placeholder="🔍 Buscar usuário..." oninput="renderizarListas()">
+                    </div>
+                    <ul class="contact-list" id="global-list"></ul>
+                    <div id="btn-mais-global" class="btn-ver-mais hidden" onclick="toggleGlobal()"></div>
+                </div>
+            </div>
+
+            <div class="chat-area">
+                <div class="tab-bar" id="tab-bar"></div>
+
+                <div id="chat-header">
+                    <img id="chat-header-img" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10">
+                    <div class="chat-header-info">
+                        <strong id="chat-header-name">Nome da Pessoa</strong>
+                        <span id="chat-header-recado">Recado da pessoa...</span>
+                        <div id="digitando-aviso">✏️ está digitando...</div>
+                    </div>
+                </div>
+
+                <div class="chat-history" id="chat-history"></div>
+                <div class="typing-area">
+                    <div class="toolbar">
+                        <button title="Nudge" onclick="enviarNudge()">🔔 Nudge</button>
+                        <button title="Peido" onclick="enviarPeido()">💨 Peido</button>
+                        <button title="Dedo" onclick="abrirSeletorDedo()" style="color: #e81123; font-weight: bold;">🖕 Dedo</button>
+                        <button title="Desafiar para Damas" onclick="abrirDesafiarDama()">♟️ Damas</button>
+                        <button onclick="adicionarEmoji('😊')">😊</button>
+                        <button onclick="adicionarEmoji('😂')">😂</button>
+                        <button onclick="adicionarEmoji('❤️')">❤️</button>
+                        <button title="Enviar Foto" onclick="document.getElementById('input-foto').click()">📷 Foto</button>
+                        <input type="file" id="input-foto" accept="image/*" style="display: none;" onchange="processarEEnviarImagem(event)">
+                    </div>
+                    <div class="input-row">
+                        <textarea class="chat-input" id="chat-input" placeholder="Digite sua mensagem..." onkeypress="handleKeyPress(event)" oninput="avisarDigitando()"></textarea>
+                        <button class="send-btn" onclick="enviarMensagem()">Enviar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="login-screen" class="tela-auth">
+            <div class="msn-login-window">
+                <div class="msn-login-title">
+                    <span>Windows Live Messenger</span>
+                    <div style="display:flex; gap:5px;">
+                        <div class="win-btn">_</div><div class="win-btn">□</div><div class="win-btn close">X</div>
+                    </div>
+                </div>
+                <div class="msn-login-body">
+                    <div class="msn-login-left">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10" alt="MSN Logo">
+                    </div>
+                    <div class="msn-login-right">
+                        <label>Endereço de e-mail ou Apelido:</label>
+                        <input type="text" id="login-name" placeholder="exemplo@msn.com ou apelido" maxlength="40">
+                        <label>Senha:</label>
+                        <input type="password" id="login-pass" placeholder="Sua senha" onkeypress="handleKeyPressLogin(event)">
+                        <label>Status inicial:</label>
+                        <select id="login-status">
+                            <option value="online">🟢 Online</option>
+                            <option value="ausente">🟡 Ausente</option>
+                            <option value="ocupado">🔴 Ocupado</option>
+                            <option value="invisivel">⚪ Invisível</option>
+                        </select>
+                        <div id="login-error" class="msg-erro"></div>
+                    </div>
+                </div>
+                <div class="msn-login-footer">
+                    <div class="msn-login-links">
+                        <a onclick="mostrarTelaCadastro()">Obter um novo endereço (Criar Conta)</a>
+                        <a onclick="recuperarSenha()">Esqueceu sua senha?</a>
+                    </div>
+                    <button class="btn-msn-entrar" onclick="fazerLogin()">Entrar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="cadastro-screen" class="tela-auth hidden">
+            <div class="msn-register-window">
+                <div class="msn-login-title">
+                    <span>Criar Conta no MSM GLOBAL</span>
+                    <div style="display:flex; gap:5px;"><div class="win-btn close" onclick="voltarParaLogin()">X</div></div>
+                </div>
+                <div class="msn-register-body">
+                    <p style="font-size: 12px; color: #666; margin-top:0;">Preencha os dados abaixo.<br><strong>Apenas maiores de 18 anos.</strong></p>
+                    <label style="font-size:12px; font-weight:bold; color:#333;">Apelido (sem espaços):</label>
+                    <input type="text" id="reg-name" placeholder="Ex: joaozinho" maxlength="15">
+                    <label style="font-size:12px; font-weight:bold; color:#333;">E-mail Real (para recuperação):</label>
+                    <input type="email" id="reg-email" placeholder="Ex: joao@gmail.com">
+                    <label style="font-size:12px; font-weight:bold; color:#333;">Senha (mín. 6 carac.):</label>
+                    <input type="password" id="reg-pass" placeholder="Sua senha secreta">
+                    <label style="font-size:12px; font-weight:bold; color:#333;">Idade:</label>
+                    <input type="number" id="reg-age" placeholder="Sua idade" min="18">
+                    <div id="cadastro-error" class="msg-erro"></div>
+                </div>
+                <div class="msn-login-footer">
+                    <button class="btn-msn-entrar" style="background:linear-gradient(to bottom, #f0f5fc, #d1e0f5);" onclick="voltarParaLogin()">Voltar</button>
+                    <button class="btn-msn-entrar" onclick="fazerCadastro()">Cadastrar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading-screen" class="hidden">
+            <div class="spinner"></div>
+            <div id="loading-text">Aguarde...</div>
+        </div>
+
+        <div id="modal-dedo" class="hidden">
+            <div class="modal-dedo-box">
+                <h3>Para quem?</h3>
+                <select id="select-dedo"></select>
+                <button class="btn-enviar-dedo" onclick="enviarDedo()">Enviar 🖕</button>
+                <button class="btn-cancelar" onclick="fecharSeletorDedo()">Cancelar</button>
+            </div>
+        </div>
+
+        <div id="modal-criar-sala" class="hidden">
+            <div class="modal-dedo-box">
+                <h3>🏠 Criar Nova Sala</h3>
+                <div class="sala-foto-row">
+                    <img id="criar-sala-foto-preview" class="sala-foto-preview" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10" onclick="document.getElementById('criar-sala-foto').click()">
+                    <span class="sala-foto-hint">Clique na foto<br>para alterar</span>
+                    <input type="file" id="criar-sala-foto" accept="image/*" style="display:none;" onchange="processarFotoSalaCriacao(event)">
+                </div>
+                <label>Nome da Sala:</label>
+                <input type="text" id="sala-nome" maxlength="25" placeholder="Ex: Sala dos Amigos">
+                <label>Bio (opcional):</label>
+                <input type="text" id="sala-bio" maxlength="60" placeholder="Descrição curta da sala">
+                <label style="display:flex; align-items:center; gap:6px; font-weight:normal;">
+                    <input type="checkbox" id="sala-privada" onchange="document.getElementById('sala-senha').style.display = this.checked ? 'block' : 'none';" style="width:auto; margin:0;">
+                    🔒 Sala privada (com senha)
+                </label>
+                <input type="password" id="sala-senha" maxlength="30" placeholder="Senha (mín. 3)" style="display:none;">
+                <button class="btn-criar-sala" onclick="criarSala()">Criar Sala</button>
+                <button class="btn-cancelar" onclick="fecharCriarSala()">Cancelar</button>
+            </div>
+        </div>
+
+        <div id="modal-editar-sala" class="hidden">
+            <div class="modal-dedo-box">
+                <h3>✏️ Editar Sala</h3>
+                <div class="sala-foto-row">
+                    <img id="editar-sala-foto-preview" class="sala-foto-preview" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10" onclick="document.getElementById('editar-sala-foto').click()">
+                    <span class="sala-foto-hint">Clique na foto<br>para alterar</span>
+                    <input type="file" id="editar-sala-foto" accept="image/*" style="display:none;" onchange="processarFotoSalaEdicao(event)">
+                </div>
+                <label>Nome da Sala:</label>
+                <input type="text" id="editar-sala-nome" maxlength="25">
+                <label>Bio:</label>
+                <input type="text" id="editar-sala-bio" maxlength="60" placeholder="Descrição curta da sala">
+                <button class="btn-criar-sala" onclick="salvarEdicaoSala()">Salvar Alterações</button>
+                <button class="btn-cancelar" onclick="fecharEditarSala()">Cancelar</button>
+            </div>
+        </div>
+
+        <div id="modal-config" class="hidden">
+            <div class="modal-dedo-box">
+                <h3>⚙️ Configurações</h3>
+                <p style="font-size:11px; color:#666; margin:0 0 12px 0;">Alterar Senha</p>
+                <label>Senha atual:</label>
+                <input type="password" id="senha-atual" placeholder="Digite sua senha atual">
+                <label>Nova senha (mín. 6):</label>
+                <input type="password" id="senha-nova" placeholder="Digite a nova senha">
+                <label>Confirmar nova senha:</label>
+                <input type="password" id="senha-confirma" placeholder="Repita a nova senha">
+                <div id="senha-erro" class="msg-erro"></div>
+                <button class="btn-config" onclick="alterarSenha()">Alterar Senha</button>
+                <button class="btn-cancelar" onclick="fecharConfiguracoes()">Cancelar</button>
+            </div>
+        </div>
+
+        <div id="modal-add-amigo" class="hidden">
+            <div class="modal-dedo-box">
+                <h3>➕ Adicionar Amigo</h3>
+                <p style="font-size:11px; color:#666; margin:0 0 10px 0;">Digite o apelido ou e-mail do usuário</p>
+                <input type="text" id="add-friend-input" placeholder="Apelido ou e-mail" maxlength="50">
+                <button class="btn-add-friend-modal" onclick="buscarEAdicionarAmigo()">Adicionar</button>
+                <button class="btn-cancelar" onclick="fecharAddAmigo()">Cancelar</button>
+            </div>
+        </div>
+
+        <div id="modal-admin" class="hidden">
+            <div class="admin-box">
+                <h2>🛡️ Painel de Moderação</h2>
+                <p>Logado como: <strong id="admin-cargo" style="color:#2ecc71;"></strong> | <span id="admin-welcome"></span></p>
+                <div class="admin-section">
+                    <h3>📢 Fazer Anúncio</h3>
+                    <input type="text" id="admin-anuncio-input" placeholder="Digite o anúncio para todos..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #666; box-sizing:border-box; font-size:12px; margin-bottom:8px;">
+                    <button class="btn-unban" style="width:100%; padding:8px;" onclick="enviarAnuncio()">Enviar Anúncio</button>
+                </div>
+                <div class="admin-section">
+                    <h3>🔍 Buscar Usuário (Online ou Offline)</h3>
+                    <input type="text" id="admin-search" placeholder="Digite o apelido para buscar..." style="width:100%; padding:8px; border-radius:4px; border:1px solid #666; box-sizing:border-box; font-size:12px;" oninput="buscarUsuarios()">
+                    <ul id="admin-search-results" class="admin-user-list" style="margin-top:8px;"></ul>
+                </div>
+                <h3 style="text-align:left; margin-top:20px; font-size:14px; color:#bdc3c7;">Usuários Online:</h3>
+                <ul class="admin-user-list" id="admin-user-list"></ul>
+                <button class="btn-cancelar" style="margin-top:10px; width:100%; padding:10px; font-weight:bold;" onclick="document.getElementById('modal-admin').classList.add('hidden')">Fechar Painel</button>
+            </div>
+        </div>
+
+        <div id="peido-overlay" class="hidden" onclick="fecharPeidoOverlay()">
+            <div class="peido-wrapper">
+                <video id="peido-video" playsinline preload="auto"
+                       src="https://packaged-media.redd.it/zkf9wn8pk6b91/pb/m2-res_480p.mp4?m=DASHPlaylist.mpd&var=sgpssan&v=1&e=1792656000&s=a6526db7856e713529eddfc813b989e1ea992e22"></video>
+                <div class="peido-legenda" id="peido-legenda">💨</div>
+                <div class="peido-hint">Clique para fechar</div>
+            </div>
+        </div>
+
+        <!-- ==================== DAMAS ==================== -->
+        <div id="modal-desafiar-dama" class="hidden">
+            <div class="modal-dedo-box">
+                <h3>♟️ Desafiar para Damas</h3>
+                <p style="font-size:11px; color:#666; margin:0 0 10px 0;">Escolha um usuário online</p>
+                <select id="dama-select-adversario"></select>
+                <button class="btn-add-friend-modal" onclick="enviarDesafioDama()">Enviar Desafio</button>
+                <button class="btn-cancelar" onclick="fecharDesafiarDama()">Cancelar</button>
+            </div>
+        </div>
+
+        <div id="modal-receber-desafio" class="hidden">
+            <div class="modal-dedo-box">
+                <h3>🎯 Desafio de Damas!</h3>
+                <p style="font-size:12px; color:#333; margin:10px 0;"><strong id="desafio-nome-autor">Alguém</strong> te desafiou para uma partida de damas!</p>
+                <button class="btn-add-friend-modal" onclick="aceitarDesafioDama()">✅ Aceitar</button>
+                <button class="btn-cancelar" style="background:#e81123; color:white;" onclick="recusarDesafioDama()">❌ Recusar</button>
+            </div>
+        </div>
+
+        <div id="modal-dama-jogo" class="hidden">
+            <div class="dama-box">
+                <div class="dama-header">
+                    <strong id="dama-titulo-partida">♟️ Damas</strong>
+                    <button class="dama-close" onclick="fecharJogoDama()">X</button>
+                </div>
+                <div class="dama-info-bar">
+                    <span id="dama-info-vez" style="font-weight:bold; color:#e67e22;"></span>
+                    <span id="dama-info-timer" style="font-weight:bold; color:#e81123;"></span>
+                </div>
+                <div class="dama-content">
+                    <div class="dama-board-wrap">
+                        <canvas id="dama-canvas" width="320" height="320"></canvas>
+                        <div id="dama-vencedor" class="hidden" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.85); color:#fff; padding:15px 25px; border-radius:8px; font-weight:bold; font-size:16px; text-align:center; z-index:10;"></div>
+                    </div>
+                    <div class="dama-side">
+                        <div class="dama-players">
+                            <div id="dama-p1-info" class="dama-player"></div>
+                            <div id="dama-p2-info" class="dama-player"></div>
+                        </div>
+                        <div class="dama-chat" id="dama-chat"></div>
+                        <div class="dama-chat-input-row">
+                            <input type="text" id="dama-chat-input" maxlength="80" placeholder="Mensagem no chat da partida..." onkeypress="if(event.key==='Enter')enviarMensagemChatDama()">
+                            <button onclick="enviarMensagemChatDama()">➤</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast-container"></div>
+    </div>
+
+    <script>
+        /* ==================== VARIÁVEIS GLOBAIS ==================== */
+        let meuId = "", meuNome = "", meuCargo = "user", minhaFingerprint = "";
+        let meuStatus = "online", meuRecado = "Disponível";
+        let minhaFoto = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10";
+
+        const FOTO_SALA_PADRAO = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10";
+        let fotoSalaCriacao = "";
+        let fotoSalaEdicao = "";
+        let salaEditandoId = null;
+
+        let db, ref, push, set, update, onValue, onDisconnect, remove, serverTimestamp, off, get;
+        let auth, onAuthStateChanged, signOut;
+        let firebaseReady = false, sessaoIniciada = false;
+        let isInitialLoad = true, timerDigitando;
+
+        let abasAbertas = [{ id: 'global', nome: 'Chat Global' }];
+        let abaAtiva = 'global';
+        let msgListenerAtual = null;
+        let ultimaMsgId = null;
+
+        let usuariosOnline = {}, meusAmigos = {}, abasNaoLidas = {}, usuariosConhecidos = {};
+        let avisosUsuarios = {};
+        let salasConhecidas = {}, salaMembros = {};
+
+        let expandirAmigos = false, expandirGlobal = false;
+        const LIMITE_LISTA = 5;
+
+        const PERMISSOES = {
+            'user':    [],
+            'suporte': ['kick', 'anunciar', 'avisar'],
+            'gm':      ['kick', 'ban1h', 'banperm', 'anunciar', 'avisar'],
+            'admin':   ['kick', 'ban1h', 'banperm', 'desbanir', 'anunciar', 'promover', 'avisar'],
+            'master':  ['kick', 'ban1h', 'banperm', 'desbanir', 'anunciar', 'promover', 'avisar']
+        };
+        const CARGOS_PROMOVER = {
+            'master': ['admin', 'gm', 'suporte', 'user'],
+            'admin':  ['gm', 'suporte', 'user']
+        };
+        const CARGOS_ADMIN = ['suporte', 'gm', 'admin', 'master'];
+
+        function temPermissao(acao) { return (PERMISSOES[meuCargo] || []).includes(acao); }
+        function podePromoverPara(cargo) { return (CARGOS_PROMOVER[meuCargo] || []).includes(cargo); }
+        function isAdminCargo(cargo) { return CARGOS_ADMIN.includes(cargo); }
+
+        const audioLogin = document.getElementById('som-login');
+        const audioAlerta = document.getElementById('som-alerta');
+        const audioEnvio = document.getElementById('som-envio');
+        const audioEnvioRemetente = document.getElementById('som-envio-remetente');
+        const audioPeido = document.getElementById('som-peido');
+        const audioOnline = document.getElementById('som-online');
+        const audioPromocaoAdm = document.getElementById('som-promocao-adm');
+        const audioAlertaAdm = document.getElementById('som-alerta-adm');
+
+        let audioDesbloqueado = false;
+        let audioDesbloqueando = false;
+
+        function desbloquearTodosAudios() {
+            if (audioDesbloqueado || audioDesbloqueando) return;
+            audioDesbloqueando = true;
+            const lista = [audioLogin, audioAlerta, audioEnvio, audioEnvioRemetente, audioPeido, audioOnline, audioPromocaoAdm, audioAlertaAdm];
+            let sucessos = 0;
+            lista.forEach(a => {
+                if (!a) return;
+                try {
+                    a.volume = 0; a.muted = true;
+                    const p = a.play();
+                    if (p !== undefined) {
+                        p.then(() => { sucessos++; a.pause(); a.currentTime = 0; a.volume = 1; a.muted = false; })
+                         .catch(() => { a.volume = 1; a.muted = false; });
+                    }
+                } catch (e) { a.volume = 1; a.muted = false; }
+            });
+            setTimeout(() => {
+                if (sucessos > 0) { audioDesbloqueado = true; console.log("[Áudio] ✅ Desbloqueado (" + sucessos + "/8)"); }
+                audioDesbloqueando = false;
+            }, 300);
+        }
+
+        document.addEventListener('click', desbloquearTodosAudios);
+        document.addEventListener('touchstart', desbloquearTodosAudios, { passive: true });
+        document.addEventListener('keydown', desbloquearTodosAudios);
+
+        function tocarAudio(el) {
+            if (!el) return;
+            try {
+                if (el.muted) el.muted = false;
+                if (el.volume === 0) el.volume = 1;
+                el.pause(); el.currentTime = 0;
+                const p = el.play();
+                if (p !== undefined) p.catch(e => {
+                    console.warn("[Áudio] Bloqueado:", el.id, "—", e.name);
+                    if (e.name === 'NotAllowedError' && !audioDesbloqueado) desbloquearTodosAudios();
+                });
+            } catch (e) { console.warn("[Áudio] Erro:", el.id, e); }
+        }
+
+        function mostrarLoading(t) { document.getElementById('loading-text').innerText = t; document.getElementById('loading-screen').classList.remove('hidden'); }
+        function esconderLoading() { document.getElementById('loading-screen').classList.add('hidden'); }
+
+        function gerarFingerprint() {
+            const raw = navigator.userAgent + screen.width + screen.height + screen.colorDepth + Intl.DateTimeFormat().resolvedOptions().timeZone;
+            let hash = 0;
+            for (let i = 0; i < raw.length; i++) { hash = ((hash << 5) - hash) + raw.charCodeAt(i); hash = hash & hash; }
+            return "fp_" + Math.abs(hash).toString(16);
+        }
+
+        async function sha256(texto) {
+            try {
+                const buf = new TextEncoder().encode(texto);
+                const h = await crypto.subtle.digest('SHA-256', buf);
+                return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch (e) {
+                let h = 0;
+                for (let i = 0; i < texto.length; i++) { h = ((h << 5) - h) + texto.charCodeAt(i); h = h & h; }
+                return 'fb_' + Math.abs(h).toString(16);
+            }
+        }
+
+        function handleKeyPressLogin(e) { if (e.key === 'Enter') fazerLogin(); }
+
+        /* ==================== ANIMAÇÃO PEIDO ==================== */
+        let timerPeido = null;
+
+        function abrirPeidoOverlay(nomeAutor) {
+            const overlay = document.getElementById('peido-overlay');
+            const video = document.getElementById('peido-video');
+            const legenda = document.getElementById('peido-legenda');
+            if (!overlay || !video) return;
+            legenda.innerText = `💨 ${nomeAutor} soltou um peido!`;
+            overlay.classList.remove('hidden');
+            try {
+                video.currentTime = 0;
+                video.muted = false;
+                video.volume = 1;
+                video.loop = true;
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(err => {
+                        console.log("[Peido] Autoplay com som bloqueado, fallback mutado + áudio:", err);
+                        video.muted = true;
+                        video.play().catch(()=>{});
+                        tocarAudio(audioPeido);
+                    });
+                }
+            } catch (e) {}
+            clearTimeout(timerPeido);
+            timerPeido = setTimeout(() => fecharPeidoOverlay(), 8300);
+        }
+
+        function fecharPeidoOverlay() {
+            const overlay = document.getElementById('peido-overlay');
+            const video = document.getElementById('peido-video');
+            if (overlay) overlay.classList.add('hidden');
+            if (video) { try { video.pause(); video.currentTime = 0; video.muted = false; video.loop = false; } catch (e) {} }
+            clearTimeout(timerPeido);
+        }
+
+        /* ==================== PRESENÇA ==================== */
+        function restaurarPresenca() {
+            if (!meuId || !meuStatus || !firebaseReady) return;
+            const stRestore = (meuStatus === 'offline') ? 'online' : meuStatus;
+            console.log("[Aba] Restaurando status:", stRestore);
+            update(ref(db, 'users/' + meuId), { status: stRestore, digitando: false });
+            onDisconnect(ref(db, 'users/' + meuId)).update({ status: 'offline', digitando: false });
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                restaurarPresenca();
+                audioDesbloqueado = false;
+                desbloquearTodosAudios();
+            }
+        });
+        window.addEventListener('pageshow', (e) => { if (e.persisted) restaurarPresenca(); });
+        window.addEventListener('online', () => restaurarPresenca());
+
+        /* ==================== ABAS DO TOPO ==================== */
+        function mudarAbaTop(tipo) {
+            const va = document.getElementById('view-amigos'), vs = document.getElementById('view-salas'), vg = document.getElementById('view-global');
+            const ba = document.getElementById('tab-btn-amigos'), bs = document.getElementById('tab-btn-salas'), bg = document.getElementById('tab-btn-global');
+            va.classList.add('hidden'); vs.classList.add('hidden'); vg.classList.add('hidden');
+            ba.classList.remove('active'); bs.classList.remove('active'); bg.classList.remove('active');
+            if (tipo === 'amigos') { va.classList.remove('hidden'); ba.classList.add('active'); }
+            else if (tipo === 'salas') { vs.classList.remove('hidden'); bs.classList.add('active'); }
+            else { vg.classList.remove('hidden'); bg.classList.add('active'); }
+        }
+
+        /* ==================== CONFIGURAÇÕES ==================== */
+        function abrirConfiguracoes() {
+            document.getElementById('modal-config').classList.remove('hidden');
+            document.getElementById('senha-atual').value = '';
+            document.getElementById('senha-nova').value = '';
+            document.getElementById('senha-confirma').value = '';
+            document.getElementById('senha-erro').style.display = 'none';
+        }
+        function fecharConfiguracoes() { document.getElementById('modal-config').classList.add('hidden'); }
+
+        async function alterarSenha() {
+            const senhaAtual = document.getElementById('senha-atual').value;
+            const senhaNova = document.getElementById('senha-nova').value;
+            const senhaConfirma = document.getElementById('senha-confirma').value;
+            const err = document.getElementById('senha-erro');
+            err.style.display = 'none';
+            if (!senhaAtual || !senhaNova || !senhaConfirma) { err.innerText = "Preencha todos os campos."; err.style.display = 'block'; return; }
+            if (senhaNova.length < 6) { err.innerText = "Senha nova precisa ter no mínimo 6 caracteres."; err.style.display = 'block'; return; }
+            if (senhaNova !== senhaConfirma) { err.innerText = "As senhas novas não coincidem."; err.style.display = 'block'; return; }
+            if (senhaAtual === senhaNova) { err.innerText = "A nova senha deve ser diferente da atual."; err.style.display = 'block'; return; }
+            mostrarLoading("Alterando senha...");
+            try {
+                const user = auth.currentUser;
+                if (!user || !user.email) throw new Error("Usuário não autenticado");
+                const credential = window.EmailAuthProvider.credential(user.email, senhaAtual);
+                await window.reauthenticateWithCredential(user, credential);
+                await window.updatePassword(user, senhaNova);
+                esconderLoading();
+                alert("✅ Senha alterada com sucesso!");
+                fecharConfiguracoes();
+            } catch (e) {
+                esconderLoading();
+                if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') err.innerText = "Senha atual incorreta.";
+                else if (e.code === 'auth/weak-password') err.innerText = "Senha muito fraca.";
+                else if (e.code === 'auth/requires-recent-login') err.innerText = "Faça login novamente para alterar a senha.";
+                else err.innerText = "Erro: " + e.message;
+                err.style.display = 'block';
+            }
+        }
+
+        /* ==================== ADICIONAR AMIGO ==================== */
+        function abrirAddAmigo() { document.getElementById('modal-add-amigo').classList.remove('hidden'); document.getElementById('add-friend-input').value = ''; }
+        function fecharAddAmigo() { document.getElementById('modal-add-amigo').classList.add('hidden'); }
+
+        async function buscarEAdicionarAmigo() {
+            const termo = document.getElementById('add-friend-input').value.trim();
+            if (!termo) return alert("Digite um apelido ou e-mail.");
+            if (termo.length < 2) return alert("Mínimo 2 caracteres.");
+            mostrarLoading("Buscando...");
+            try {
+                let uidEncontrado = null, nomeEncontrado = null;
+                const termoLimpo = termo.toLowerCase().replace(/\s+/g, '');
+                const snapNick = await get(ref(db, 'nicknames/' + termoLimpo));
+                if (snapNick.exists() && snapNick.val().uid) { uidEncontrado = snapNick.val().uid; nomeEncontrado = termoLimpo; }
+                if (!uidEncontrado) {
+                    const snapUsers = await get(ref(db, 'users'));
+                    if (snapUsers.exists()) {
+                        const todos = snapUsers.val();
+                        const termoLower = termo.toLowerCase();
+                        for (const uid in todos) {
+                            const u = todos[uid];
+                            if ((u.email && u.email.toLowerCase() === termoLower) || (u.nome && u.nome.toLowerCase() === termoLower)) { uidEncontrado = uid; nomeEncontrado = u.nome; break; }
+                        }
+                    }
+                }
+                esconderLoading();
+                if (!uidEncontrado) return alert("Usuário não encontrado.");
+                if (uidEncontrado === meuId) return alert("Você não pode adicionar a si mesmo.");
+                if (meusAmigos[uidEncontrado]) return alert(`"${nomeEncontrado}" já está nos seus contatos.`);
+                await set(ref(db, 'friends/' + meuId + '/' + uidEncontrado), true);
+                mostrarToastCustom(`✅ <strong>${nomeEncontrado}</strong> adicionado!`, '#4caf50');
+                fecharAddAmigo();
+            } catch (e) { esconderLoading(); alert("Erro: " + e.message); }
+        }
+
+        /* ==================== BOOT ==================== */
+        window.addEventListener('firebaseReady', () => {
+            db = window.db; ref = window.ref; push = window.push; set = window.set; update = window.update;
+            onValue = window.onValue; onDisconnect = window.onDisconnect; remove = window.remove;
+            serverTimestamp = window.serverTimestamp; off = window.off; get = window.get;
+            auth = window.auth; onAuthStateChanged = window.onAuthStateChanged; signOut = window.signOut;
+            firebaseReady = true;
+            minhaFingerprint = gerarFingerprint();
+            get(ref(db, 'banned_fingerprints/' + minhaFingerprint)).then(snap => {
+                if (snap.exists()) { document.getElementById('login-screen').classList.add('hidden'); document.getElementById('modal-bloqueio').classList.remove('hidden'); }
+                else iniciarMonitoramentoAuth();
+            }).catch(() => iniciarMonitoramentoAuth());
+        });
+
+        function iniciarMonitoramentoAuth() {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    if (!sessaoIniciada) {
+                        mostrarLoading("Carregando perfil...");
+                        const timeoutPerfil = setTimeout(() => {
+                            if (!sessaoIniciada) { meuId = user.uid; meuNome = user.email ? user.email.split('@')[0] : "Usuário"; esconderLoading(); iniciarSessao(); }
+                        }, 4000);
+                        get(ref(db, 'bans/' + user.uid)).then(banSnap => {
+                            if (banSnap.exists()) {
+                                const b = banSnap.val();
+                                if (b.tipo === 'perm') { document.getElementById('login-screen').classList.add('hidden'); document.getElementById('motivo-bloqueio').innerText = "Sua conta foi banida permanentemente.\nMotivo: " + (b.motivo || "Violação."); document.getElementById('modal-bloqueio').classList.remove('hidden'); window.signOut(auth); return; }
+                                else if (b.tipo === 'temp' && Date.now() < b.expiraEm) { document.getElementById('login-screen').classList.add('hidden'); document.getElementById('motivo-bloqueio').innerText = "Banido até: " + new Date(b.expiraEm).toLocaleString() + "\nMotivo: " + (b.motivo || "-"); document.getElementById('modal-bloqueio').classList.remove('hidden'); window.signOut(auth); return; }
+                                else remove(ref(db, 'bans/' + user.uid));
+                            }
+                            get(ref(db, 'users/' + user.uid)).then(snapshot => {
+                                clearTimeout(timeoutPerfil);
+                                if (!sessaoIniciada) {
+                                    if (snapshot.exists()) { const d = snapshot.val(); meuId = user.uid; meuNome = d.nome || (user.email ? user.email.split('@')[0] : "Usuário"); meuCargo = d.cargo || 'user'; meuStatus = d.status === 'offline' ? 'online' : (d.status || 'online'); meuRecado = d.recado || 'Disponível'; minhaFoto = d.foto || minhaFoto; }
+                                    else { meuId = user.uid; meuNome = user.email ? user.email.split('@')[0] : "Usuário"; meuCargo = 'user'; meuStatus = 'online'; meuRecado = 'Disponível'; }
+                                    const dados = { nome: meuNome, status: meuStatus, recado: meuRecado, foto: minhaFoto, fingerprint: minhaFingerprint };
+                                    if (snapshot.exists()) update(ref(db, 'users/' + meuId), dados);
+                                    else { dados.cargo = meuCargo; set(ref(db, 'users/' + meuId), dados); }
+                                    document.getElementById('my-status').value = meuStatus;
+                                    document.getElementById('my-recado').value = meuRecado;
+                                    document.getElementById('my-avatar-img').src = minhaFoto;
+                                    if (meuCargo !== 'user') document.getElementById('btn-admin').classList.remove('hidden');
+                                    esconderLoading(); iniciarSessao();
+                                }
+                            }).catch(() => { clearTimeout(timeoutPerfil); if (!sessaoIniciada) { meuId = user.uid; meuNome = user.email ? user.email.split('@')[0] : "Usuário"; esconderLoading(); iniciarSessao(); } });
+                        });
+                    }
+                } else {
+                    sessaoIniciada = false;
+                    esconderLoading();
+                    document.getElementById('login-screen').classList.remove('hidden');
+                    document.getElementById('cadastro-screen').classList.add('hidden');
+                }
+            });
+        }
+
+        /* ==================== SESSÃO ==================== */
+        function iniciarSessao() {
+            if (sessaoIniciada) return;
+            sessaoIniciada = true;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('cadastro-screen').classList.add('hidden');
+            document.getElementById('my-name-display').innerText = meuNome;
+
+            salvarPerfilNoBanco();
+            onDisconnect(ref(db, 'users/' + meuId)).update({ status: 'offline', digitando: false });
+            configurarKickListener();
+
+            let ultimoEstadoConexao = null;
+            onValue(ref(db, '.info/connected'), (snap) => {
+                const conectado = snap.val() === true;
+                if (ultimoEstadoConexao === false && conectado === true) restaurarPresenca();
+                ultimoEstadoConexao = conectado;
+            });
+
+            isInitialLoad = true;
+            setTimeout(() => { isInitialLoad = false; tocarAudio(audioLogin); }, 1000);
+
+            onValue(ref(db, 'users'), (snapshot) => {
+                const novos = snapshot.val() || {};
+                if (novos[meuId]) {
+                    const d = novos[meuId];
+                    if (d.foto && minhaFoto !== d.foto) { minhaFoto = d.foto; document.getElementById('my-avatar-img').src = minhaFoto; }
+                    if (d.cargo && d.cargo !== meuCargo) {
+                        const antigo = meuCargo;
+                        meuCargo = d.cargo;
+                        if (meuCargo === 'user') { document.getElementById('btn-admin').classList.add('hidden'); document.getElementById('modal-admin').classList.add('hidden'); }
+                        else document.getElementById('btn-admin').classList.remove('hidden');
+                        if (!isInitialLoad) {
+                            const ganhou = (PERMISSOES[meuCargo] || []).length > (PERMISSOES[antigo] || []).length;
+                            mostrarToastCustom(ganhou ? '⭐ Cargo atualizado: <strong>' + meuCargo.toUpperCase() + '</strong>' : '⚠️ Cargo: <strong>' + meuCargo.toUpperCase() + '</strong>', ganhou ? '#f1c40f' : '#e67e22');
+                        }
+                    }
+                }
+                Object.keys(novos).forEach(key => {
+                    if (key === meuId) return;
+                    const u = novos[key], old = usuariosConhecidos[key];
+                    if (u.status === 'online' && (!old || old.status === 'offline' || old.status === 'invisivel')) {
+                        if (!isInitialLoad) { tocarAudio(audioOnline); mostrarToast(u.nome, 'online'); }
+                    } else if (u.status === 'offline' && old && old.status !== 'offline' && old.status !== 'invisivel') {
+                        if (!isInitialLoad) mostrarToast(u.nome, 'offline');
+                    }
+                });
+                usuariosConhecidos = { ...novos };
+                usuariosOnline = novos;
+                renderizarListas();
+                if (abaAtiva !== 'global' && !abaAtiva.startsWith('sala_')) {
+                    const idOutro = abaAtiva.split('__').find(id => id !== meuId);
+                    if (usuariosOnline[idOutro]) {
+                        if (usuariosOnline[idOutro].foto) document.getElementById('chat-header-img').src = usuariosOnline[idOutro].foto;
+                        document.getElementById('digitando-aviso').style.display = usuariosOnline[idOutro].digitando === true ? 'block' : 'none';
+                    }
+                }
+                if (!document.getElementById('modal-admin').classList.contains('hidden')) renderizarListaAdmin();
+            });
+
+            onValue(ref(db, 'friends/' + meuId), (snap) => { meusAmigos = snap.val() || {}; renderizarListas(); });
+
+            onValue(ref(db, 'warnings'), (snap) => {
+                avisosUsuarios = snap.val() || {};
+                if (!document.getElementById('modal-admin').classList.contains('hidden')) renderizarListaAdmin();
+                if (document.getElementById('admin-search').value.trim().length >= 2) buscarUsuarios();
+            });
+
+            onValue(ref(db, 'rooms'), (snap) => {
+                salasConhecidas = snap.val() || {};
+                renderizarSalas();
+                if (abaAtiva.startsWith('sala_')) {
+                    const rid = abaAtiva.substring(5);
+                    if (!salasConhecidas[rid]) mudarAba('global');
+                    else {
+                        const s = salasConhecidas[rid];
+                        document.getElementById('chat-header-img').src = s.foto || FOTO_SALA_PADRAO;
+                        document.getElementById('chat-header-name').innerText = '🏠 ' + s.nome;
+                        document.getElementById('chat-header-recado').innerText = s.bio || (s.publica ? '🌐 Sala pública' : '🔒 Sala privada');
+                        const aba = abasAbertas.find(a => a.id === abaAtiva);
+                        if (aba && aba.nome !== '🏠 ' + s.nome) { aba.nome = '🏠 ' + s.nome; renderizarAbas(); }
+                    }
+                }
+            });
+
+            onValue(ref(db, 'room_members'), (snap) => { salaMembros = snap.val() || {}; });
+
+            renderizarAbas();
+            mudarAba('global');
+            enviarMensagemSistema(`${meuNome} entrou no chat!`);
+            configurarNotificacoesPM();
+            configurarNotificacoesAdmin();
+            configurarListenerDesafios();
+            configurarListenerPartidasAbertas();
+        }
+
+        async function configurarKickListener() {
+            try { await remove(ref(db, 'kicks/' + meuId)); } catch (e) {}
+            let offT = 0;
+            try { const s = await get(ref(db, '.info/serverTimeOffset')); offT = s.val() || 0; } catch (e) {}
+            await new Promise(r => setTimeout(r, 400));
+            const inicio = Date.now() + offT;
+            let primeira = true;
+            onValue(ref(db, 'kicks/' + meuId), (snap) => {
+                if (primeira) {
+                    primeira = false;
+                    if (snap.exists() && (snap.val().timestamp || 0) < inicio - 5000) { remove(ref(db, 'kicks/' + meuId)).catch(()=>{}); return; }
+                    else if (!snap.exists()) return;
+                } else if (!snap.exists()) return;
+                const k = snap.val();
+                setTimeout(async () => {
+                    alert("⚠️ " + (k.motivo || "Você foi removido."));
+                    mostrarLoading("Saindo...");
+                    try { if (meuId) await update(ref(db, 'users/' + meuId), { status: 'offline', digitando: false }); } catch(e){}
+                    try { await remove(ref(db, 'kicks/' + meuId)); } catch(e){}
+                    try { await window.signOut(auth); } catch(e){}
+                    window.location.reload();
+                }, 100);
+            });
+        }
+
+        async function fazerLogout() {
+            mostrarLoading("Saindo...");
+            if (!auth) return;
+            try { if (meuId) await update(ref(db, 'users/' + meuId), { status: 'offline', digitando: false }); } catch(e){}
+            try { await window.signOut(auth); } catch(e){}
+            window.location.reload();
+        }
+
+        /* ==================== LOGIN / CADASTRO ==================== */
+        function mostrarTelaCadastro() { document.getElementById('login-screen').classList.add('hidden'); document.getElementById('cadastro-screen').classList.remove('hidden'); document.getElementById('login-error').style.display = 'none'; }
+        function voltarParaLogin() { document.getElementById('cadastro-screen').classList.add('hidden'); document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('cadastro-error').style.display = 'none'; }
+
+        async function fazerLogin() {
+            if (!firebaseReady) return alert("Aguarde 2s.");
+            try { const bc = await get(ref(db, 'banned_fingerprints/' + minhaFingerprint)); if (bc.exists()) { document.getElementById('login-screen').classList.add('hidden'); document.getElementById('modal-bloqueio').classList.remove('hidden'); return; } } catch (e) {}
+            const nome = document.getElementById('login-name').value.trim();
+            const senha = document.getElementById('login-pass').value;
+            const st = document.getElementById('login-status').value;
+            const err = document.getElementById('login-error');
+            err.style.display = 'none';
+            if (!nome || !senha) { err.innerText = "Preencha todos os campos."; err.style.display = 'block'; return; }
+            mostrarLoading("Entrando..."); isInitialLoad = true; meuStatus = st;
+            const tId = setTimeout(() => { esconderLoading(); err.innerText = "Servidor demorou."; err.style.display = 'block'; }, 10000);
+            try {
+                await window.signOut(auth);
+                if (nome.includes('@')) await window.signInWithEmailAndPassword(auth, nome, senha);
+                else { const nf = nome.toLowerCase().replace(/\s+/g, ''); const snap = await get(ref(db, 'nicknames/' + nf)); const email = (snap.exists() && snap.val().email) ? snap.val().email : `${nf}@msnlivre.app`; await window.signInWithEmailAndPassword(auth, email, senha); }
+                clearTimeout(tId);
+                document.getElementById('loading-text').innerText = "Carregando perfil...";
+            } catch (e) {
+                clearTimeout(tId); esconderLoading();
+                if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') err.innerText = "Apelido/E-mail ou senha incorretos.";
+                else if (e.code === 'auth/user-not-found') err.innerText = "Conta não encontrada.";
+                else err.innerText = "Erro: " + e.message;
+                err.style.display = 'block';
+            }
+        }
+
+        function fazerCadastro() {
+            if (!firebaseReady) return alert("Aguarde 2s.");
+            const nome = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const senha = document.getElementById('reg-pass').value;
+            const idade = document.getElementById('reg-age').value.trim();
+            const err = document.getElementById('cadastro-error');
+            err.style.display = 'none';
+            if (!nome || !email || !senha || !idade) { err.innerText = "Preencha todos os campos."; err.style.display = 'block'; return; }
+            if (parseInt(idade) < 18) { err.innerText = "Apenas maiores de 18."; err.style.display = 'block'; return; }
+            if (senha.length < 6) { err.innerText = "Senha mínima: 6 caracteres."; err.style.display = 'block'; return; }
+            mostrarLoading("Registrando..."); isInitialLoad = true;
+            const tId = setTimeout(() => { esconderLoading(); err.innerText = "Servidor demorou."; err.style.display = 'block'; }, 10000);
+            get(ref(db, 'nicknames/' + nome.toLowerCase())).then(snap => {
+                if (snap.exists()) { clearTimeout(tId); esconderLoading(); err.innerText = "Apelido já em uso."; err.style.display = 'block'; }
+                else {
+                    window.createUserWithEmailAndPassword(auth, email, senha).then(c => {
+                        clearTimeout(tId);
+                        const u = c.user;
+                        set(ref(db, 'users/' + u.uid), { nome, email, idade, status: 'online', recado: 'Disponível', foto: minhaFoto, digitando: false, cargo: 'user', fingerprint: minhaFingerprint });
+                        set(ref(db, 'nicknames/' + nome.toLowerCase()), { email, uid: u.uid });
+                    }).catch(e => {
+                        clearTimeout(tId); esconderLoading();
+                        err.innerText = e.code === 'auth/email-already-in-use' ? "E-mail já cadastrado." : "Erro: " + e.message;
+                        err.style.display = 'block';
+                    });
+                }
+            }).catch(() => { clearTimeout(tId); esconderLoading(); err.innerText = "Erro de conexão."; err.style.display = 'block'; });
+        }
+
+        function recuperarSenha() {
+            const nome = prompt("Apelido ou e-mail para recuperar senha:");
+            if (!nome) return;
+            if (nome.includes('@')) window.sendPasswordResetEmail(auth, nome).then(() => alert("Link enviado!")).catch(e => alert("Erro: " + e.message));
+            else get(ref(db, 'nicknames/' + nome.toLowerCase())).then(s => {
+                if (s.exists()) window.sendPasswordResetEmail(auth, s.val().email).then(() => alert("Link enviado!")).catch(e => alert("Erro: " + e.message));
+                else alert("Apelido não encontrado.");
+            });
+        }
+
+        /* ==================== PAINEL ADMIN ==================== */
+        function abrirPainelAdmin() {
+            document.getElementById('modal-admin').classList.remove('hidden');
+            document.getElementById('admin-welcome').innerText = meuNome;
+            document.getElementById('admin-cargo').innerText = meuCargo.toUpperCase();
+            document.getElementById('admin-search').value = '';
+            document.getElementById('admin-search-results').innerHTML = '';
+            renderizarListaAdmin();
+        }
+
+        function renderizarListaAdmin() {
+            const list = document.getElementById('admin-user-list'); list.innerHTML = '';
+            let count = 0;
+            Object.keys(usuariosOnline).forEach(key => {
+                if (key === meuId) return;
+                if (usuariosOnline[key].status === 'offline') return;
+                renderizarUsuarioAdmin(key, usuariosOnline[key], list);
+                count++;
+            });
+            if (count === 0) list.innerHTML = '<li style="text-align:center; color:#999; font-size:12px;">Nenhum outro usuário online.</li>';
+        }
+
+        function renderizarUsuarioAdmin(id, user, container) {
+            const isInv = user.status === 'invisivel', isOff = user.status === 'offline';
+            const nome = isInv ? `<span style="color:#7f8c8d; font-size:10px;">[Invisível]</span> ${user.nome}` : user.nome;
+            const countAvisos = avisosUsuarios[id] ? Object.keys(avisosUsuarios[id]).length : 0;
+            const avisoBadge = (isOff && countAvisos > 0) ? ` <span style="color:#f39c12; font-size:10px;">(⚠️ ${countAvisos}/3)</span>` : '';
+            const li = document.createElement('li');
+            li.className = 'admin-user-item';
+            if (isInv) li.style.borderLeftColor = '#7f8c8d';
+            if (isOff) li.style.borderLeftColor = '#95a5a6';
+            let actions = '';
+            if (!isOff && temPermissao('avisar')) actions += `<button class="btn-aviso" onclick="executarAviso('${id}', '${user.nome}')">⚠️ ${countAvisos}/3</button>`;
+            if (!isOff && temPermissao('kick')) actions += `<button class="btn-kick" onclick="executarKick('${id}', '${user.nome}')">Kick</button>`;
+            if (!isOff && temPermissao('ban1h')) actions += `<button class="btn-ban-temp" onclick="executarBanTemp('${id}', '${user.nome}')">Ban 1h</button>`;
+            if (temPermissao('banperm')) actions += `<button class="btn-ban-perm" onclick="executarBanPerm('${id}', '${user.nome}')">Ban Perm</button>`;
+            if (temPermissao('desbanir')) actions += `<button class="btn-unban" onclick="executarUnban('${id}', '${user.nome}')">Desbanir</button>`;
+            let promo = '';
+            if (temPermissao('promover')) {
+                const cds = (CARGOS_PROMOVER[meuCargo] || []).filter(c => c !== (user.cargo || 'user'));
+                if (cds.length > 0) promo = `<select class="admin-promote-select" onchange="if(this.value){promoverUsuario('${id}', '${user.nome}', this.value); this.value='';}"><option value="">Promover...</option>${cds.map(c => `<option value="${c}">→ ${c.toUpperCase()}</option>`).join('')}</select>`;
+            }
+            li.innerHTML = `
+                <div class="admin-user-info">
+                    <strong>${nome} <span style="font-size:10px; color:#f1c40f;">(${(user.cargo || 'user').toUpperCase()})</span>${isOff ? ' <span style="color:#95a5a6;">[OFF]</span>' : ''}${avisoBadge}</strong>
+                    <span>Status: ${user.status}</span>
+                </div>
+                <div class="admin-actions">${actions}${promo}</div>
+            `;
+            container.appendChild(li);
+        }
+
+        function buscarUsuarios() {
+            const termo = document.getElementById('admin-search').value.trim().toLowerCase();
+            const res = document.getElementById('admin-search-results'); res.innerHTML = '';
+            if (!termo || termo.length < 2) return;
+            let n = 0;
+            Object.keys(usuariosOnline).forEach(key => {
+                if (key === meuId) return;
+                const u = usuariosOnline[key];
+                if (u.nome && u.nome.toLowerCase().includes(termo)) { renderizarUsuarioAdmin(key, u, res); n++; }
+            });
+            if (n === 0) res.innerHTML = '<li style="text-align:center; color:#999; font-size:11px;">Nenhum usuário encontrado.</li>';
+        }
+
+        /* ==================== AÇÕES DE MODERAÇÃO ==================== */
+        function anunciarAdmin(texto, categoria) {
+            if (!firebaseReady || !meuId) return;
+            const d = { autor: meuNome, idAutor: meuId, cargo: meuCargo, texto, categoria: categoria || 'info' };
+            set(push(ref(db, 'messages')), { tipo: 'admin', ...d, timestamp: serverTimestamp() });
+            set(push(ref(db, 'admin_log')), { ...d, timestamp: serverTimestamp() });
+        }
+
+        function executarKick(idAlvo, nomeAlvo) {
+            if (!temPermissao('kick')) return alert("Sem permissão.");
+            if (idAlvo === meuId) return alert("Você não pode moderar a si mesmo.");
+            const m = prompt(`Motivo do KICK em ${nomeAlvo}:`, "Desrespeito às regras");
+            if (m === null) return;
+            const motivo = m.trim() || "Sem motivo";
+            set(ref(db, 'kicks/' + idAlvo), { motivo: "KICK: " + motivo, timestamp: serverTimestamp() })
+                .then(() => { anunciarAdmin(`KICKOU ${nomeAlvo}. Motivo: ${motivo}`, 'kick'); mostrarToastCustom(`🦶 Kick em <strong>${nomeAlvo}</strong>`, '#e67e22'); })
+                .catch(e => alert("Erro: " + e.message));
+        }
+
+        function executarAviso(idAlvo, nomeAlvo) {
+            if (!temPermissao('avisar')) return alert("Sem permissão.");
+            if (idAlvo === meuId) return alert("Você não pode se auto-avisar.");
+            const m = prompt(`Motivo do AVISO para ${nomeAlvo}:`, "Comportamento inadequado");
+            if (m === null) return;
+            const motivo = m.trim() || "Sem motivo";
+            set(push(ref(db, 'warnings/' + idAlvo)), { motivo, autor: meuNome, idAutor: meuId, timestamp: serverTimestamp() })
+                .then(async () => {
+                    const snap = await get(ref(db, 'warnings/' + idAlvo));
+                    const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+                    anunciarAdmin(`Avisou ${nomeAlvo} (${count}/3). Motivo: ${motivo}`, 'aviso');
+                    mostrarToastCustom(`⚠️ Aviso em <strong>${nomeAlvo}</strong> (${count}/3)`, '#f39c12');
+                    if (count >= 3) {
+                        setTimeout(async () => {
+                            try {
+                                await set(ref(db, 'kicks/' + idAlvo), { motivo: `KICK AUTOMÁTICO: 3 avisos atingidos. Último motivo: ${motivo}`, timestamp: serverTimestamp() });
+                                await remove(ref(db, 'warnings/' + idAlvo));
+                                anunciarAdmin(`KICK AUTOMÁTICO: ${nomeAlvo} atingiu 3 avisos.`, 'kick');
+                                mostrarToastCustom(`🦶 <strong>${nomeAlvo}</strong> KICK AUTOMÁTICO (3 avisos)`, '#e81123');
+                            } catch (e) { console.error(e); }
+                        }, 500);
+                    }
+                })
+                .catch(e => alert("Erro: " + e.message));
+        }
+
+        function executarBanTemp(idAlvo, nomeAlvo) {
+            if (!temPermissao('ban1h')) return alert("Sem permissão.");
+            if (idAlvo === meuId) return alert("Você não pode moderar a si mesmo.");
+            const m = prompt(`Motivo do BAN 1H em ${nomeAlvo}:`, "Violação das regras");
+            if (m === null) return;
+            const motivo = m.trim() || "Sem motivo";
+            const expiraEm = Date.now() + 60 * 60 * 1000;
+            set(ref(db, 'bans/' + idAlvo), { tipo: 'temp', expiraEm, motivo })
+                .then(() => set(ref(db, 'kicks/' + idAlvo), { motivo: `BAN 1H: ${motivo}`, timestamp: serverTimestamp() }))
+                .then(() => { anunciarAdmin(`Baniu ${nomeAlvo} por 1 HORA. Motivo: ${motivo}`, 'ban'); mostrarToastCustom(`🔨 ${nomeAlvo} banido 1h`, '#f1c40f'); })
+                .catch(e => alert("Erro: " + e.message));
+        }
+
+        function executarBanPerm(idAlvo, nomeAlvo) {
+            if (!temPermissao('banperm')) return alert("Sem permissão.");
+            if (idAlvo === meuId) return alert("Você não pode moderar a si mesmo.");
+            const m = prompt(`Motivo do BAN PERMANENTE em ${nomeAlvo}:`, "Violação grave");
+            if (m === null) return;
+            const motivo = m.trim() || "Sem motivo";
+            get(ref(db, 'users/' + idAlvo)).then(snap => {
+                const u = snap.val() || {};
+                return set(ref(db, 'bans/' + idAlvo), { tipo: 'perm', motivo })
+                    .then(() => u.fingerprint ? set(ref(db, 'banned_fingerprints/' + u.fingerprint), { motivo, data: serverTimestamp() }) : null)
+                    .then(() => (u.status && u.status !== 'offline') ? set(ref(db, 'kicks/' + idAlvo), { motivo: `BAN PERMANENTE: ${motivo}`, timestamp: serverTimestamp() }) : null);
+            }).then(() => { anunciarAdmin(`Baniu PERMANENTEMENTE ${nomeAlvo}. Motivo: ${motivo}`, 'ban'); mostrarToastCustom(`🔨 <strong>${nomeAlvo}</strong> BAN PERM`, '#e81123'); })
+              .catch(e => alert("Erro: " + e.message));
+        }
+
+        function executarUnban(idAlvo, nomeAlvo) {
+            if (!temPermissao('desbanir')) return alert("Sem permissão.");
+            if (!confirm(`Desbanir ${nomeAlvo}?`)) return;
+            const m = prompt(`Motivo do DESBAN:`, "Recurso aceito");
+            if (m === null) return;
+            const motivo = m.trim() || "Sem motivo";
+            get(ref(db, 'users/' + idAlvo)).then(snap => {
+                const u = snap.val() || {};
+                return remove(ref(db, 'bans/' + idAlvo))
+                    .then(() => u.fingerprint ? remove(ref(db, 'banned_fingerprints/' + u.fingerprint)) : null);
+            }).then(() => { anunciarAdmin(`Desbaniu ${nomeAlvo}. Motivo: ${motivo}`, 'unban'); mostrarToastCustom(`✅ ${nomeAlvo} desbanido`, '#2ecc71'); })
+              .catch(e => alert("Erro: " + e.message));
+        }
+
+        function promoverUsuario(idAlvo, nomeAlvo, novoCargo) {
+            if (!temPermissao('promover')) return alert("Sem permissão.");
+            if (!podePromoverPara(novoCargo)) return alert("Cargo não permitido.");
+            if (idAlvo === meuId) return alert("Você não pode alterar seu cargo.");
+            if (!confirm(`Alterar cargo de ${nomeAlvo} para ${novoCargo.toUpperCase()}?`)) return;
+            update(ref(db, 'users/' + idAlvo), { cargo: novoCargo })
+                .then(() => { anunciarAdmin(`Cargo de ${nomeAlvo} → ${novoCargo.toUpperCase()}`, 'promocao'); mostrarToastCustom(`⭐ ${nomeAlvo} → <strong>${novoCargo.toUpperCase()}</strong>`, '#9b59b6'); })
+                .catch(e => alert("Erro: " + e.message));
+        }
+
+        function enviarAnuncio() {
+            if (!temPermissao('anunciar')) return alert("Sem permissão.");
+            const inp = document.getElementById('admin-anuncio-input');
+            const texto = inp.value.trim();
+            if (!texto) return alert("Digite o anúncio.");
+            anunciarAdmin(texto, 'anuncio');
+            inp.value = '';
+            mostrarToastCustom('📢 Anúncio enviado!', '#f1c40f');
+        }
+
+        function editarNomeExibicao() {
+            const novo = prompt("Nome de exibição (não altera login):", meuNome);
+            if (novo === null) return;
+            const limpo = novo.trim().substring(0, 15);
+            if (!limpo) return alert("Inválido.");
+            if (limpo === meuNome) return;
+            meuNome = limpo;
+            document.getElementById('my-name-display').innerText = meuNome;
+            salvarPerfilNoBanco();
+            enviarMensagemSistema(`${meuNome} agora usa este nome.`);
+        }
+
+        /* ==================== SALAS ==================== */
+        function abrirCriarSala() {
+            document.getElementById('modal-criar-sala').classList.remove('hidden');
+            document.getElementById('sala-nome').value = '';
+            document.getElementById('sala-bio').value = '';
+            document.getElementById('sala-privada').checked = false;
+            document.getElementById('sala-senha').value = '';
+            document.getElementById('sala-senha').style.display = 'none';
+            fotoSalaCriacao = '';
+            document.getElementById('criar-sala-foto-preview').src = FOTO_SALA_PADRAO;
+        }
+        function fecharCriarSala() { document.getElementById('modal-criar-sala').classList.add('hidden'); }
+
+        function processarFotoSalaCriacao(ev) { processarImagemQuadrada(ev, base64 => { fotoSalaCriacao = base64; document.getElementById('criar-sala-foto-preview').src = base64; }); }
+        function processarFotoSalaEdicao(ev) { processarImagemQuadrada(ev, base64 => { fotoSalaEdicao = base64; document.getElementById('editar-sala-foto-preview').src = base64; }); }
+
+        function processarImagemQuadrada(ev, callback) {
+            const f = ev.target.files[0]; if (!f) return;
+            const r = new FileReader();
+            r.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const c = document.createElement('canvas'); const T = 300; c.width = T; c.height = T;
+                    const sx = img.width > img.height ? (img.width - img.height) / 2 : 0;
+                    const sy = img.height > img.width ? (img.height - img.width) / 2 : 0;
+                    const ss = Math.min(img.width, img.height);
+                    c.getContext('2d').drawImage(img, sx, sy, ss, ss, 0, 0, T, T);
+                    callback(c.toDataURL('image/jpeg', 0.7));
+                };
+                img.src = e.target.result;
+            };
+            r.readAsDataURL(f);
+            ev.target.value = '';
+        }
+
+        async function criarSala() {
+            const nome = document.getElementById('sala-nome').value.trim();
+            const bio = document.getElementById('sala-bio').value.trim();
+            const privada = document.getElementById('sala-privada').checked;
+            const senha = document.getElementById('sala-senha').value;
+            if (!nome) return alert('Digite o nome.');
+            if (privada && senha.length < 3) return alert('Senha mínima: 3 caracteres.');
+            const roomRef = push(ref(db, 'rooms'));
+            const roomId = roomRef.key;
+            const dados = { nome, publica: !privada, idCriador: meuId, nomeCriador: meuNome, timestamp: serverTimestamp() };
+            if (bio) dados.bio = bio;
+            if (fotoSalaCriacao) dados.foto = fotoSalaCriacao;
+            try {
+                await set(roomRef, dados);
+                if (privada) { const hash = await sha256(senha); await set(ref(db, 'room_secrets/' + roomId), { senhaHash: hash }); }
+                fotoSalaCriacao = '';
+                mostrarToastCustom(`🎉 Sala <strong>${nome}</strong> criada!`, '#4caf50');
+                fecharCriarSala();
+                abrirAbaSala(roomId, nome);
+            } catch (e) { alert('Erro ao criar sala: ' + e.message); }
+        }
+
+        async function entrarSala(roomId) {
+            const sala = salasConhecidas[roomId];
+            if (!sala) return;
+            if (isAdminCargo(meuCargo) || sala.idCriador === meuId) { abrirAbaSala(roomId, sala.nome); return; }
+            if (salaMembros[roomId] && salaMembros[roomId][meuId]) { abrirAbaSala(roomId, sala.nome); return; }
+            if (sala.publica) {
+                try { await set(ref(db, `room_members/${roomId}/${meuId}`), 'public'); abrirAbaSala(roomId, sala.nome); }
+                catch (e) { alert('Erro ao entrar: ' + e.message); }
+                return;
+            }
+            const senha = prompt(`🔒 Senha da sala "${sala.nome}":`);
+            if (senha === null) return;
+            const hash = await sha256(senha);
+            try { await set(ref(db, `room_members/${roomId}/${meuId}`), hash); mostrarToastCustom(`🔓 Entrou em <strong>${sala.nome}</strong>`, '#4caf50'); abrirAbaSala(roomId, sala.nome); }
+            catch (e) { alert('❌ Senha incorreta!'); }
+        }
+
+        function abrirAbaSala(roomId, nomeSala) {
+            const id = 'sala_' + roomId;
+            let a = abasAbertas.find(x => x.id === id);
+            if (!a) abasAbertas.push({ id, nome: '🏠 ' + nomeSala });
+            else a.nome = '🏠 ' + nomeSala;
+            mudarAba(id);
+        }
+
+        async function excluirSala(roomId, event) {
+            event.stopPropagation();
+            const sala = salasConhecidas[roomId];
+            if (!sala) return;
+            if (!isAdminCargo(meuCargo) && sala.idCriador !== meuId) return alert('Sem permissão.');
+            if (!confirm(`Excluir "${sala.nome}"?`)) return;
+            try {
+                await remove(ref(db, 'room_messages/' + roomId));
+                await remove(ref(db, 'room_members/' + roomId));
+                await remove(ref(db, 'room_secrets/' + roomId));
+                await remove(ref(db, 'rooms/' + roomId));
+                if (abaAtiva === 'sala_' + roomId) mudarAba('global');
+                else { abasAbertas = abasAbertas.filter(a => a.id !== 'sala_' + roomId); renderizarAbas(); }
+                mostrarToastCustom(`🗑️ Sala excluída`, '#e81123');
+            } catch (e) { alert('Erro: ' + e.message); }
+        }
+
+        function abrirEditarSala(roomId) {
+            const sala = salasConhecidas[roomId];
+            if (!sala) return;
+            if (!isAdminCargo(meuCargo) && sala.idCriador !== meuId) return alert('Sem permissão.');
+            salaEditandoId = roomId;
+            fotoSalaEdicao = sala.foto || '';
+            document.getElementById('editar-sala-foto-preview').src = sala.foto || FOTO_SALA_PADRAO;
+            document.getElementById('editar-sala-nome').value = sala.nome || '';
+            document.getElementById('editar-sala-bio').value = sala.bio || '';
+            document.getElementById('modal-editar-sala').classList.remove('hidden');
+        }
+
+        function fecharEditarSala() { document.getElementById('modal-editar-sala').classList.add('hidden'); salaEditandoId = null; fotoSalaEdicao = ''; }
+
+        async function salvarEdicaoSala() {
+            if (!salaEditandoId) return;
+            const sala = salasConhecidas[salaEditandoId];
+            if (!sala || (!isAdminCargo(meuCargo) && sala.idCriador !== meuId)) return alert('Sem permissão.');
+            const nome = document.getElementById('editar-sala-nome').value.trim();
+            const bio = document.getElementById('editar-sala-bio').value.trim();
+            if (!nome) return alert('Nome não pode ficar vazio.');
+            const upd = { nome, bio: bio || '', foto: fotoSalaEdicao || '' };
+            try { await update(ref(db, 'rooms/' + salaEditandoId), upd); mostrarToastCustom(`✅ Sala atualizada!`, '#4caf50'); fecharEditarSala(); }
+            catch (e) { alert('Erro: ' + e.message); }
+        }
+
+        function renderizarSalas() {
+            const list = document.getElementById('rooms-list'); if (!list) return;
+            list.innerHTML = '';
+            const searchEl = document.getElementById('sala-search');
+            const termo = searchEl ? searchEl.value.toLowerCase().trim() : '';
+            let arr = Object.entries(salasConhecidas || {});
+            if (termo) {
+                arr = arr.filter(([_, s]) =>
+                    (s.nome || '').toLowerCase().includes(termo) ||
+                    (s.bio || '').toLowerCase().includes(termo) ||
+                    (s.nomeCriador || '').toLowerCase().includes(termo)
+                );
+            }
+            if (arr.length === 0) {
+                list.innerHTML = termo ? '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Nenhuma sala encontrada.</li>' : '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Nenhuma sala. Clique em ➕</li>';
+                return;
+            }
+            arr.sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
+            arr.forEach(([roomId, sala]) => {
+                const li = document.createElement('li');
+                li.className = 'contact-item';
+                li.style.cursor = 'pointer';
+                li.onclick = () => entrarSala(roomId);
+                const podeExcluir = isAdminCargo(meuCargo) || sala.idCriador === meuId;
+                const podeEditar = isAdminCargo(meuCargo) || sala.idCriador === meuId;
+                const icone = sala.publica ? '🌐' : '🔒';
+                const bio = sala.bio || ('por ' + (sala.nomeCriador || '???'));
+                li.innerHTML = `
+                    <img src="${sala.foto || FOTO_SALA_PADRAO}" style="width:26px; height:26px; border-radius:4px; object-fit:cover; border:1px solid #d1e0f5; flex-shrink:0;">
+                    <div class="contact-info" style="display:flex; flex-direction:column; flex:1; min-width:0;">
+                        <strong style="color:#003366; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${icone} ${sala.nome}</strong>
+                        <span style="font-size:10px; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${bio}</span>
+                    </div>
+                    ${podeEditar ? `<button class="btn-edit-room" onclick="event.stopPropagation(); abrirEditarSala('${roomId}');" title="Editar">✏️</button>` : ''}
+                    ${podeExcluir ? `<button class="btn-remove-room" onclick="excluirSala('${roomId}', event)" title="Excluir">🗑️</button>` : ''}
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        /* ==================== LISTAS / CONTATOS ==================== */
+        function avisarDigitando() {
+            if (!firebaseReady || !meuId) return;
+            if (abaAtiva === 'global' || abaAtiva.startsWith('sala_')) return;
+            update(ref(db, 'users/' + meuId), { digitando: true });
+            clearTimeout(timerDigitando);
+            timerDigitando = setTimeout(() => update(ref(db, 'users/' + meuId), { digitando: false }), 2500);
+        }
+
+        function toggleAmigos() { expandirAmigos = !expandirAmigos; renderizarListas(); }
+        function toggleGlobal() { expandirGlobal = !expandirGlobal; renderizarListas(); }
+
+        function removerAmigo(idAlvo, event) {
+            event.stopPropagation();
+            if (confirm("Remover contato?")) remove(ref(db, 'friends/' + meuId + '/' + idAlvo)).then(() => mostrarToast("Contato removido", 'offline')).catch(() => alert("Erro."));
+        }
+
+        function renderizarListas() {
+            const gl = document.getElementById('global-list'), fl = document.getElementById('my-friends-list');
+            const bmA = document.getElementById('btn-mais-amigos'), bmG = document.getElementById('btn-mais-global');
+            if (!gl || !fl) return;
+            gl.innerHTML = ''; fl.innerHTML = '';
+            bmA.classList.add('hidden'); bmG.classList.add('hidden');
+            const termF = (document.getElementById('friends-search')?.value || '').toLowerCase().trim();
+            const termG = (document.getElementById('global-search')?.value || '').toLowerCase().trim();
+            let count = 0;
+            let listaG = [], listaF = [];
+            if (usuariosOnline) {
+                Object.keys(usuariosOnline).forEach(key => {
+                    const u = usuariosOnline[key];
+                    if (u.status === 'invisivel' && key !== meuId) return;
+                    if (u.nome) {
+                        if (u.status === 'online') count++;
+                        listaG.push({ key, user: u });
+                        if (meusAmigos[key]) listaF.push({ key, user: u });
+                    }
+                });
+            }
+            if (termF) listaF = listaF.filter(it => (it.user.nome || '').toLowerCase().includes(termF));
+            if (termG) listaG = listaG.filter(it => (it.user.nome || '').toLowerCase().includes(termG));
+            const ord = (a, b) => (a.user.status === 'offline' && b.user.status !== 'offline') ? 1 : (a.user.status !== 'offline' && b.user.status === 'offline') ? -1 : 0;
+            listaG.sort(ord); listaF.sort(ord);
+
+            if (listaF.length === 0) {
+                fl.innerHTML = termF ? '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Nenhum amigo encontrado.</li>' : '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Clique no + para adicionar um amigo.</li>';
+            } else {
+                const exib = expandirAmigos ? listaF : listaF.slice(0, LIMITE_LISTA);
+                exib.forEach(item => {
+                    const isOff = item.user.status === 'offline';
+                    const li = document.createElement('li');
+                    li.className = 'contact-item' + (isOff ? ' offline' : '');
+                    li.innerHTML = `
+                        <span class="status-icon ${getStatusClass(item.user.status)}"></span>
+                        <div class="contact-info" style="display:flex; flex-direction:column; flex:1;" onclick="abrirAbaPrivada('${item.key}', '${item.user.nome}')">
+                            <strong>${item.user.nome}</strong>
+                            <span style="font-size:10px; color:#666;">${item.user.recado || ''} ${isOff ? '(Offline)' : ''}</span>
+                        </div>
+                        <button class="btn-remove-friend" onclick="removerAmigo('${item.key}', event)">x</button>
+                    `;
+                    fl.appendChild(li);
+                });
+                if (listaF.length > LIMITE_LISTA) { bmA.classList.remove('hidden'); bmA.innerText = expandirAmigos ? `Ver menos ▲` : `Ver mais (${listaF.length - LIMITE_LISTA}) ▼`; }
+            }
+
+            if (listaG.length > 0) {
+                const exib = expandirGlobal ? listaG : listaG.slice(0, LIMITE_LISTA);
+                exib.forEach(item => {
+                    const isMeu = item.key === meuId, isOff = item.user.status === 'offline';
+                    const nome = isMeu ? `${item.user.nome} (Você)` : item.user.nome;
+                    const click = isMeu ? '' : `onclick="abrirAbaPrivada('${item.key}', '${item.user.nome}')"`;
+                    const li = document.createElement('li');
+                    li.className = 'contact-item' + (isOff && !isMeu ? ' offline' : '');
+                    li.innerHTML = `
+                        <span class="status-icon ${getStatusClass(item.user.status)}"></span>
+                        <div class="contact-info" style="display:flex; flex-direction:column; flex:1; cursor:${isMeu ? 'default' : 'pointer'};" ${click}>
+                            <strong style="${isMeu ? 'color:#003366;' : ''}">${nome}</strong>
+                            <span style="font-size:10px; color:#666;">${item.user.recado || ''} ${isOff && !isMeu ? '(Offline)' : ''}</span>
+                        </div>
+                        ${(!meusAmigos[item.key] && !isMeu) ? `<button class="btn-add-friend" onclick="adicionarAmigo('${item.key}', event)" title="Adicionar aos amigos">+</button>` : ''}
+                    `;
+                    gl.appendChild(li);
+                });
+                if (listaG.length > LIMITE_LISTA) { bmG.classList.remove('hidden'); bmG.innerText = expandirGlobal ? `Ver menos ▲` : `Ver mais (${listaG.length - LIMITE_LISTA}) ▼`; }
+            } else if (termG) {
+                gl.innerHTML = '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Nenhum usuário encontrado.</li>';
+            }
+            document.getElementById('online-count').innerText = `(${count})`;
+        }
+
+        function getStatusClass(s) { return s === 'ausente' ? 'status-ausente' : s === 'ocupado' ? 'status-ocupado' : s === 'invisivel' ? 'status-invisivel' : s === 'offline' ? 'status-offline' : 'status-online'; }
+        function adicionarAmigo(id, e) { e.stopPropagation(); if (firebaseReady) set(ref(db, `friends/${meuId}/${id}`), true); }
+
+        /* ==================== TOASTS ==================== */
+        function mostrarToast(nome, tipo) {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = 'toast' + (tipo === 'offline' ? ' offline-toast' : '');
+            const msg = tipo === 'online' ? `<strong>${nome}</strong> entrou online!` : `<strong>${nome}</strong> ficou offline.`;
+            t.innerHTML = `<img class="logo-magica" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10"><span>${msg}</span>`;
+            c.appendChild(t);
+            setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 300); }, 4000);
+        }
+        function mostrarToastCustom(html, cor) {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = 'toast';
+            if (cor) t.style.borderLeftColor = cor;
+            t.innerHTML = `<span>${html}</span>`;
+            c.appendChild(t);
+            setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 300); }, 3500);
+        }
+        function mostrarToastAdmin(d) {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = 'toast admin-toast';
+            const icon = d.categoria === 'kick' ? '🦶' : d.categoria === 'ban' ? '🔨' : d.categoria === 'unban' ? '🔓' : d.categoria === 'promocao' ? '⭐' : d.categoria === 'aviso' ? '⚠️' : '📢';
+            t.innerHTML = `<span style="font-size:15px;">${icon}</span><span><strong style="color:#f1c40f;">${(d.cargo || 'ADM').toUpperCase()}</strong> ${d.autor}: ${d.texto}</span>`;
+            c.appendChild(t);
+            setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 300); }, 6000);
+        }
+        function mostrarPopupPM(nome, texto, chatId) {
+            const c = document.getElementById('toast-container');
+            const p = document.createElement('div');
+            p.className = 'msn-pm-popup';
+            const prev = texto ? (texto.length > 25 ? texto.substring(0, 25) + '...' : texto) : 'Nova mensagem';
+            p.innerHTML = `
+                <div class="msn-pm-header"><span>💬 Nova Mensagem</span><button class="msn-pm-close" onclick="this.parentElement.parentElement.remove()">X</button></div>
+                <div class="msn-pm-body" onclick="mudarAba('${chatId}'); this.parentElement.remove();">
+                    <strong>${nome} diz:</strong><p>${prev}</p>
+                </div>
+            `;
+            c.appendChild(p);
+            setTimeout(() => { if (p.parentElement) { p.classList.add('fade-out'); setTimeout(() => p.remove(), 300); } }, 6000);
+        }
+
+        /* ==================== PERFIL ==================== */
+        function salvarPerfilNoBanco() {
+            if (firebaseReady && meuId) update(ref(db, 'users/' + meuId), { nome: meuNome, status: meuStatus, recado: meuRecado, foto: minhaFoto });
+        }
+        function mudarStatus(s) { meuStatus = s; salvarPerfilNoBanco(); }
+        function atualizarRecado() { meuRecado = document.getElementById('my-recado').value || 'Disponível'; salvarPerfilNoBanco(); }
+
+        /* ==================== ABAS / CHAT ==================== */
+        function renderizarAbas() {
+            const bar = document.getElementById('tab-bar'); bar.innerHTML = '';
+            abasAbertas.forEach(aba => {
+                const div = document.createElement('div');
+                div.className = `tab ${abaAtiva === aba.id ? 'active' : ''} ${abasNaoLidas[aba.id] ? 'unread' : ''}`;
+                div.onclick = () => mudarAba(aba.id);
+                let h = `<span>${aba.nome}</span>`;
+                if (aba.id !== 'global') h += `<span class="tab-close" onclick="fecharAba(event, '${aba.id}')">x</span>`;
+                div.innerHTML = h;
+                bar.appendChild(div);
+            });
+        }
+
+        function abrirAbaPrivada(idAlvo, nomeAlvo) {
+            const id = [meuId, idAlvo].sort().join('__');
+            let a = abasAbertas.find(x => x.id === id);
+            if (!a) abasAbertas.push({ id, nome: nomeAlvo });
+            else a.nome = nomeAlvo;
+            mudarAba(id);
+        }
+
+        function fecharAba(e, id) {
+            e.stopPropagation();
+            abasAbertas = abasAbertas.filter(a => a.id !== id);
+            delete abasNaoLidas[id];
+            if (abaAtiva === id) mudarAba('global');
+            else renderizarAbas();
+        }
+
+        function obterCaminhoMsg(aba) {
+            if (aba === 'global') return 'messages';
+            if (aba.startsWith('sala_')) return `room_messages/${aba.substring(5)}`;
+            return `private_messages/${aba.split('__').sort().join('__')}`;
+        }
+
+        function mudarAba(idAba) {
+            abaAtiva = idAba; abasNaoLidas[idAba] = false; renderizarAbas();
+            document.getElementById('chat-history').innerHTML = ''; ultimaMsgId = null;
+            const ch = document.getElementById('chat-header'), av = document.getElementById('digitando-aviso');
+            if (idAba === 'global') { ch.style.display = 'none'; av.style.display = 'none'; }
+            else if (idAba.startsWith('sala_')) {
+                const rid = idAba.substring(5), sala = salasConhecidas[rid];
+                ch.style.display = 'flex';
+                document.getElementById('chat-header-img').src = (sala && sala.foto) ? sala.foto : FOTO_SALA_PADRAO;
+                document.getElementById('chat-header-name').innerText = sala ? '🏠 ' + sala.nome : 'Sala';
+                document.getElementById('chat-header-recado').innerText = sala ? (sala.bio || (sala.publica ? '🌐 Sala pública' : '🔒 Sala privada')) : '';
+                av.style.display = 'none';
+            } else {
+                const idOutro = idAba.split('__').find(id => id !== meuId);
+                const u = usuariosOnline[idOutro];
+                if (u) {
+                    ch.style.display = 'flex';
+                    document.getElementById('chat-header-img').src = u.foto || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10";
+                    document.getElementById('chat-header-name').innerText = u.nome;
+                    document.getElementById('chat-header-recado').innerText = u.recado || 'Disponível';
+                    av.style.display = u.digitando === true ? 'block' : 'none';
+                }
+            }
+            if (msgListenerAtual && firebaseReady) off(msgListenerAtual);
+            msgListenerAtual = ref(db, obterCaminhoMsg(idAba));
+            onValue(msgListenerAtual, (snap) => renderizarMensagens(snap.val(), idAba));
+        }
+
+        /* ==================== ENVIO ==================== */
+        function enviarMensagem() {
+            const inp = document.getElementById('chat-input'), texto = inp.value.trim();
+            if (!texto) return;
+            if (firebaseReady) {
+                const path = obterCaminhoMsg(abaAtiva);
+                const dados = { tipo: 'texto', autor: meuNome, idAutor: meuId, texto, timestamp: serverTimestamp() };
+                if (!abaAtiva.startsWith('sala_') && abaAtiva !== 'global') dados.idAlvo = abaAtiva.split('__').find(id => id !== meuId);
+                set(push(ref(db, path)), dados);
+                update(ref(db, 'users/' + meuId), { digitando: false });
+                clearTimeout(timerDigitando);
+                tocarAudio(audioEnvioRemetente);
+            }
+            inp.value = '';
+        }
+
+        function enviarNudge() {
+            if (!firebaseReady) return;
+            const path = obterCaminhoMsg(abaAtiva);
+            const dados = { tipo: 'nudge', autor: meuNome, idAutor: meuId, timestamp: serverTimestamp() };
+            if (!abaAtiva.startsWith('sala_') && abaAtiva !== 'global') dados.idAlvo = abaAtiva.split('__').find(id => id !== meuId);
+            set(push(ref(db, path)), dados);
+        }
+
+        function enviarPeido() {
+            if (!firebaseReady) return;
+            const path = obterCaminhoMsg(abaAtiva);
+            const dados = { tipo: 'peido', autor: meuNome, idAutor: meuId, timestamp: serverTimestamp() };
+            if (!abaAtiva.startsWith('sala_') && abaAtiva !== 'global') dados.idAlvo = abaAtiva.split('__').find(id => id !== meuId);
+            set(push(ref(db, path)), dados);
+        }
+
+        function abrirSeletorDedo() {
+            if (abaAtiva !== 'global' && !abaAtiva.startsWith('sala_')) {
+                const idAlvo = abaAtiva.split('__').find(id => id !== meuId);
+                const nomeAlvo = abasAbertas.find(a => a.id === abaAtiva).nome;
+                enviarDedoDireto(idAlvo, nomeAlvo); return;
+            }
+            const sel = document.getElementById('select-dedo'); sel.innerHTML = '';
+            let tem = false;
+            Object.keys(usuariosOnline).forEach(k => {
+                const u = usuariosOnline[k];
+                if (k !== meuId && u.nome && u.status !== 'invisivel' && u.status !== 'offline') { sel.appendChild(new Option(u.nome, k)); tem = true; }
+            });
+            if (!tem) return alert("Ninguém visível online! 😢");
+            document.getElementById('modal-dedo').classList.remove('hidden');
+        }
+        function fecharSeletorDedo() { document.getElementById('modal-dedo').classList.add('hidden'); }
+        function enviarDedo() { const s = document.getElementById('select-dedo'); enviarDedoDireto(s.value, s.options[s.selectedIndex].text); fecharSeletorDedo(); }
+        function enviarDedoDireto(idAlvo, nomeAlvo) {
+            if (!firebaseReady || !idAlvo) return;
+            let path;
+            if (abaAtiva.startsWith('sala_')) path = `room_messages/${abaAtiva.substring(5)}`;
+            else path = `private_messages/${[meuId, idAlvo].sort().join('__')}`;
+            set(push(ref(db, path)), { tipo: 'dedo', autor: meuNome, idAutor: meuId, idAlvo, nomeAlvo, timestamp: serverTimestamp() });
+        }
+        function handleKeyPress(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensagem(); } }
+        function adicionarEmoji(e) { const i = document.getElementById('chat-input'); i.value += e; i.focus(); }
+        function enviarMensagemSistema(texto) { if (firebaseReady && meuId) set(push(ref(db, 'messages')), { tipo: 'sistema', autor: 'Sistema', idAutor: meuId, texto, timestamp: serverTimestamp() }); }
+
+        /* ==================== IMAGENS ==================== */
+        function processarEEnviarImagem(ev) {
+            const f = ev.target.files[0]; if (!f) return;
+            const r = new FileReader();
+            r.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const c = document.createElement('canvas');
+                    let w = img.width, h = img.height; const MAX = 600;
+                    if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                    c.width = w; c.height = h;
+                    c.getContext('2d').drawImage(img, 0, 0, w, h);
+                    enviarFoto(c.toDataURL('image/jpeg', 0.6));
+                };
+                img.src = e.target.result;
+            };
+            r.readAsDataURL(f);
+            ev.target.value = '';
+        }
+        function enviarFoto(base64) {
+            if (!firebaseReady) return;
+            const path = obterCaminhoMsg(abaAtiva);
+            const dados = { tipo: 'imagem', autor: meuNome, idAutor: meuId, texto: base64, timestamp: serverTimestamp() };
+            if (!abaAtiva.startsWith('sala_') && abaAtiva !== 'global') dados.idAlvo = abaAtiva.split('__').find(id => id !== meuId);
+            set(push(ref(db, path)), dados);
+            tocarAudio(audioEnvioRemetente);
+        }
+        function processarEnviarAvatar(ev) {
+            const f = ev.target.files[0]; if (!f) return;
+            const r = new FileReader();
+            r.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const c = document.createElement('canvas'); const T = 150; c.width = T; c.height = T;
+                    const sx = img.width > img.height ? (img.width - img.height) / 2 : 0;
+                    const sy = img.height > img.width ? (img.height - img.width) / 2 : 0;
+                    const ss = Math.min(img.width, img.height);
+                    c.getContext('2d').drawImage(img, sx, sy, ss, ss, 0, 0, T, T);
+                    minhaFoto = c.toDataURL('image/jpeg', 0.8);
+                    document.getElementById('my-avatar-img').src = minhaFoto;
+                    salvarPerfilNoBanco();
+                };
+                img.src = e.target.result;
+            };
+            r.readAsDataURL(f);
+            ev.target.value = '';
+        }
+
+        /* ==================== RENDER MENSAGENS ==================== */
+        function formatarTexto(t) {
+            if (!t) return t;
+            return t.replace(/:\)/g, '😊').replace(/:\(/g, '☹️').replace(/;\)/g, '😉').replace(/<3/g, '❤️').replace(/:D/g, '😃').replace(/:P/g, '😛').replace(/\(y\)/gi, '👍');
+        }
+
+        function renderizarMensagens(messages, idAba) {
+            const hist = document.getElementById('chat-history'); hist.innerHTML = '';
+            if (!messages) return;
+            const isFirst = ultimaMsgId === null;
+            const arr = Object.entries(messages).map(([id, d]) => ({ id, ...d })).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            let lastId = null;
+            arr.forEach(msg => {
+                const isMeu = msg.idAutor === meuId;
+                if (msg.tipo === 'texto') {
+                    const div = document.createElement('div'); div.className = `msg ${isMeu ? 'sent' : 'received'}`;
+                    const hora = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : '';
+                    div.innerHTML = `${!isMeu ? `<div class="msg-sender">${msg.autor}</div>` : ''}<div>${formatarTexto(msg.texto)}</div><div class="msg-time">${hora}</div>`;
+                    hist.appendChild(div);
+                } else if (msg.tipo === 'imagem') {
+                    const div = document.createElement('div'); div.className = `msg ${isMeu ? 'sent' : 'received'}`;
+                    const hora = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : '';
+                    div.innerHTML = `${!isMeu ? `<div class="msg-sender">${msg.autor}</div>` : ''}<img src="${msg.texto}" class="msg-img" onclick="window.open(this.src)"><div class="msg-time">${hora}</div>`;
+                    hist.appendChild(div);
+                } else if (msg.tipo === 'sistema') {
+                    const div = document.createElement('div'); div.style.cssText = 'text-align:center; font-size:11px; color:#888; margin:5px 0; font-style:italic;'; div.innerText = msg.texto; hist.appendChild(div);
+                } else if (msg.tipo === 'admin') {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'text-align:center; font-size:12px; margin:8px 0; background:linear-gradient(to right, #fff9c4, #ffe0b2); padding:10px; border-radius:5px; border: 2px solid #f1c40f; color:#003366; font-weight:bold;';
+                    const ic = msg.categoria === 'kick' ? '🦶' : msg.categoria === 'ban' ? '🔨' : msg.categoria === 'unban' ? '🔓' : msg.categoria === 'promocao' ? '⭐' : msg.categoria === 'aviso' ? '⚠️' : '📢';
+                    div.innerHTML = `${ic} <span style="background:#f1c40f; color:#333; padding:2px 6px; border-radius:3px; font-size:10px; margin-right:5px;">${(msg.cargo || 'ADM').toUpperCase()}</span><strong>${msg.autor}</strong> ${msg.texto}`;
+                    hist.appendChild(div);
+                } else if (msg.tipo === 'nudge') {
+                    const div = document.createElement('div'); div.style.cssText = 'text-align:center; font-size:11px; color:#e74c3c; font-weight:bold; margin:5px 0;';
+                    div.innerText = isMeu ? `🔔 Você chamou atenção!` : `🔔 ${msg.autor} chamou atenção!`;
+                    hist.appendChild(div);
+                } else if (msg.tipo === 'peido') {
+                    const div = document.createElement('div'); div.style.cssText = 'text-align:center; font-size:13px; color:#1b5e20; font-weight:bold; margin:10px 0; background:#e8f5e9; padding:8px; border-radius:5px; border:1px dashed #4caf50;';
+                    div.innerText = `💨 ${msg.autor} soltou um peido!`; hist.appendChild(div);
+                } else if (msg.tipo === 'dedo') {
+                    const div = document.createElement('div');
+                    if (msg.idAlvo === meuId) { div.style.cssText = 'text-align:center; font-size:14px; color:#e81123; font-weight:bold; margin:10px 0; background:#ffe6e6; padding:8px; border-radius:5px; border:1px solid #ffcccc;'; div.innerText = `🖕 ${msg.autor} te mandou um dedo!`; }
+                    else { div.style.cssText = 'text-align:center; font-size:11px; color:#888; margin:5px 0; font-style:italic;'; div.innerText = `🖕 ${msg.autor} mandou dedo para ${msg.nomeAlvo}`; }
+                    hist.appendChild(div);
+                }
+                lastId = msg.id;
+                if (!isMeu && ultimaMsgId !== msg.id) {
+                    if (msg.idAlvo === meuId && idAba !== abaAtiva) {
+                        const cid = [meuId, msg.idAutor].sort().join('__');
+                        abasNaoLidas[cid] = true;
+                        if (!abasAbertas.find(a => a.id === cid)) abasAbertas.push({ id: cid, nome: msg.autor });
+                        renderizarAbas();
+                    }
+                }
+            });
+            if (lastId && lastId !== ultimaMsgId) {
+                const msg = arr[arr.length - 1], isMeu = msg.idAutor === meuId;
+                if (!isFirst && (idAba === 'global' || msg.idAlvo === meuId || idAba.startsWith('sala_'))) {
+                    if (msg.tipo === 'peido') { if (!isMeu) abrirPeidoOverlay(msg.autor); }
+                    else if (msg.tipo === 'nudge') { tocarAudio(audioAlerta); document.getElementById('msn-window').classList.add('nudge-animation'); setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500); }
+                    else if (!isMeu) {
+                        if (msg.tipo === 'texto' || msg.tipo === 'imagem') tocarAudio(audioEnvio);
+                        else if (msg.tipo === 'dedo') { tocarAudio(audioAlerta); if (msg.idAlvo === meuId) { document.getElementById('msn-window').classList.add('nudge-animation'); setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500); } }
+                    }
+                }
+                ultimaMsgId = lastId;
+            }
+            hist.scrollTop = hist.scrollHeight;
+        }
+
+        /* ==================== NOTIFICAÇÕES PM ==================== */
+        function configurarNotificacoesPM() {
+            onValue(ref(db, 'private_messages'), (snapshot) => {
+                const todas = snapshot.val(); if (!todas) return;
+                Object.keys(todas).forEach(cid => {
+                    const partes = cid.split('__');
+                    if (!partes.includes(meuId)) return;
+                    const cidNorm = partes.sort().join('__');
+                    if (cidNorm === abaAtiva) return;
+                    const msgs = todas[cid]; if (!msgs) return;
+                    const keys = Object.keys(msgs).sort();
+                    const latest = msgs[keys[keys.length - 1]];
+                    if (!latest || latest.idAutor === meuId || latest.idAlvo !== meuId) return;
+                    if (abasNaoLidas[cidNorm] === keys[keys.length - 1]) return;
+                    abasNaoLidas[cidNorm] = keys[keys.length - 1];
+                    const idOutro = partes.find(id => id !== meuId);
+                    const nomeOutro = usuariosOnline[idOutro] ? usuariosOnline[idOutro].nome : 'Alguém';
+                    let a = abasAbertas.find(x => x.id === cidNorm);
+                    if (!a) abasAbertas.push({ id: cidNorm, nome: nomeOutro });
+                    else if (a.nome === 'Alguém' && nomeOutro !== 'Alguém') a.nome = nomeOutro;
+                    renderizarAbas();
+                    if (isInitialLoad) return;
+                    if (latest.tipo === 'texto') { tocarAudio(audioEnvio); mostrarPopupPM(nomeOutro, formatarTexto(latest.texto), cidNorm); }
+                    else if (latest.tipo === 'imagem') { tocarAudio(audioEnvio); mostrarPopupPM(nomeOutro, "📷 Enviou uma foto", cidNorm); }
+                    else if (latest.tipo === 'nudge') { tocarAudio(audioAlerta); document.getElementById('msn-window').classList.add('nudge-animation'); setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500); mostrarPopupPM(nomeOutro, "🔔 Te chamou atenção!", cidNorm); }
+                    else if (latest.tipo === 'peido') { abrirPeidoOverlay(nomeOutro); mostrarPopupPM(nomeOutro, "💨 Soltou um peido!", cidNorm); }
+                    else if (latest.tipo === 'dedo') { tocarAudio(audioAlerta); document.getElementById('msn-window').classList.add('nudge-animation'); setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500); mostrarPopupPM(nomeOutro, "🖕 Te mandou um dedo!", cidNorm); }
+                });
+            });
+        }
+
+        /* ==================== NOTIFICAÇÕES ADMIN ==================== */
+        let adminLogInit = false;
+        const adminLogSeen = new Set();
+        function configurarNotificacoesAdmin() {
+            onValue(ref(db, 'admin_log'), (snap) => {
+                const log = snap.val();
+                if (!log) { adminLogInit = true; return; }
+                const entries = Object.entries(log);
+                const novas = [];
+                entries.forEach(([id, d]) => {
+                    if (!adminLogSeen.has(id)) { adminLogSeen.add(id); if (adminLogInit) novas.push({ id, ...d }); }
+                });
+                if (adminLogInit) {
+                    novas.forEach(d => {
+                        if (d.idAutor === meuId) return;
+                        mostrarToastAdmin(d);
+                        if (d.categoria === 'promocao' || d.categoria === 'kick') tocarAudio(audioPromocaoAdm);
+                        else tocarAudio(audioAlertaAdm);
+                    });
+                }
+                adminLogInit = true;
+            });
+        }
+
+        /* ==================== JOGO DE DAMAS ==================== */
+        let damaEstado = {
+            gameId: null,
+            board: new Array(64).fill('.'),
+            turno: null,
+            player1: null,
+            player2: null,
+            status: 'idle',
+            timerStart: 0,
+            timerInterval: null,
+            listenerJogo: null,
+            listenerChat: null,
+            desafioRecebido: null,
+            desafioListener: null,
+            partidasAbertasListener: null,
+            selecionada: null,
+            movimentosValidos: [],
+            ultimaJogadaSinc: 0
+        };
+        const DAMA_TEMPO_JOGADA = 60;
+
+        function indiceParaCoord(i) { return { row: Math.floor(i / 8), col: i % 8 }; }
+        function coordParaIndice(r, c) { return r * 8 + c; }
+        function isCasaEscura(r, c) { return (r + c) % 2 === 1; }
+
+        function tabuleiroInicial() {
+            const b = new Array(64).fill('.');
+            for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+                if (!isCasaEscura(r, c)) continue;
+                const i = coordParaIndice(r, c);
+                if (r < 3) b[i] = 'b'; else if (r > 4) b[i] = 'r';
+            }
+            return b;
+        }
+        function boardParaString(b) { return b.join(''); }
+        function stringParaBoard(s) { return s.split(''); }
+
+        function abrirDesafiarDama() {
+            if (damaEstado.status === 'playing' || damaEstado.status === 'waiting') return alert("Você já está em uma partida!");
+            const sel = document.getElementById('dama-select-adversario'); sel.innerHTML = '';
+            let tem = false;
+            Object.keys(usuariosOnline).forEach(k => {
+                const u = usuariosOnline[k];
+                if (k !== meuId && u.nome && u.status === 'online') { sel.appendChild(new Option(u.nome, k)); tem = true; }
+            });
+            if (!tem) return alert("Ninguém online para desafiar! 😢");
+            document.getElementById('modal-desafiar-dama').classList.remove('hidden');
+        }
+        function fecharDesafiarDama() { document.getElementById('modal-desafiar-dama').classList.add('hidden'); }
+
+async function enviarDesafioDama() {
+    const sel = document.getElementById('dama-select-adversario');
+    const idAlvo = sel.value;
+    const nomeAlvo = sel.options[sel.selectedIndex].text;
+    if (!idAlvo) return alert("Escolha um adversário.");
+    if (idAlvo === meuId) return alert("Você não pode se desafiar.");
+    const gameRef = push(ref(db, 'checkers'));
+    const gameId = gameRef.key;
+    const dados = {
+        player1: { uid: meuId, nome: meuNome },
+        player2: { uid: idAlvo, nome: nomeAlvo },
+        status: 'waiting',
+        board: boardParaString(tabuleiroInicial()),
+        turno: meuId,
+        timerStart: 0,
+        criadoEm: serverTimestamp()
+    };
+    try {
+        await set(gameRef, dados);
+        fecharDesafiarDama();
+        mostrarToastCustom(`♟️ Desafio enviado para <strong>${nomeAlvo}</strong>... Aguardando aceitar.`, '#9b59b6');
+
+        // 👇 NOVO: desafiante escuta a partida e abre o tabuleiro quando o outro aceitar
+        damaEstado.status = 'waiting';
+        if (damaEstado.listenerJogo) off(damaEstado.listenerJogo);
+        damaEstado.listenerJogo = ref(db, 'checkers/' + gameId);
+        let jaAbriu = false;
+
+        onValue(damaEstado.listenerJogo, (snap) => {
+            const j = snap.val();
+            if (!j) {
+                // desafiado recusou → partida apagada
+                if (!jaAbriu && damaEstado.status === 'waiting') {
+                    mostrarToastCustom('❌ Desafio recusado.', '#e81123');
+                }
+                if (damaEstado.listenerJogo) { off(damaEstado.listenerJogo); damaEstado.listenerJogo = null; }
+                damaEstado.status = 'idle';
+                damaEstado.gameId = null;
+                return;
+            }
+            if (j.status === 'playing' && !jaAbriu) {
+                jaAbriu = true;
+                damaEstado.gameId = gameId;
+                // Reaproveita a função abrirJogoDama, que já configura listener próprio
+                // mas antes desconecta este listener provisório para não duplicar
+                off(damaEstado.listenerJogo);
+                damaEstado.listenerJogo = null;
+                abrirJogoDama(gameId);
+            }
+        });
+    } catch (e) { alert("Erro ao criar partida: " + e.message); }
+}
+
+        function configurarListenerDesafios() {
+            if (damaEstado.desafioListener) off(damaEstado.desafioListener);
+            damaEstado.desafioListener = ref(db, 'checkers');
+            onValue(damaEstado.desafioListener, (snap) => {
+                const todos = snap.val() || {};
+                let encontrado = null;
+                for (const gid in todos) {
+                    const j = todos[gid];
+                    if (j.status === 'waiting' && j.player2 && j.player2.uid === meuId) { encontrado = { gameId: gid, ...j }; break; }
+                }
+                if (encontrado && (!damaEstado.desafioRecebido || damaEstado.desafioRecebido.gameId !== encontrado.gameId)) {
+                    if (damaEstado.status === 'idle') {
+                        damaEstado.desafioRecebido = encontrado;
+                        document.getElementById('desafio-nome-autor').innerText = encontrado.player1.nome;
+                        document.getElementById('modal-receber-desafio').classList.remove('hidden');
+                        tocarAudio(audioAlerta);
+                    }
+                } else if (!encontrado && damaEstado.desafioRecebido) {
+                    damaEstado.desafioRecebido = null;
+                    document.getElementById('modal-receber-desafio').classList.add('hidden');
+                }
+            });
+        }
+
+        async function aceitarDesafioDama() {
+            if (!damaEstado.desafioRecebido) return;
+            const gameId = damaEstado.desafioRecebido.gameId;
+            document.getElementById('modal-receber-desafio').classList.add('hidden');
+            damaEstado.desafioRecebido = null;
+            try {
+                await update(ref(db, 'checkers/' + gameId), { status: 'playing', timerStart: Date.now() });
+                abrirJogoDama(gameId);
+            } catch (e) { alert("Erro ao aceitar: " + e.message); }
+        }
+
+        async function recusarDesafioDama() {
+            if (!damaEstado.desafioRecebido) return;
+            const gameId = damaEstado.desafioRecebido.gameId;
+            document.getElementById('modal-receber-desafio').classList.add('hidden');
+            damaEstado.desafioRecebido = null;
+            try { await remove(ref(db, 'checkers/' + gameId)); mostrarToastCustom(`❌ Você recusou o desafio`, '#e81123'); } catch (e) {}
+        }
+
+        function abrirJogoDama(gameId) {
+            damaEstado.gameId = gameId;
+            document.getElementById('modal-dama-jogo').classList.remove('hidden');
+            document.getElementById('dama-vencedor').classList.add('hidden');
+            document.getElementById('dama-vencedor').innerText = '';
+            if (damaEstado.listenerJogo) off(damaEstado.listenerJogo);
+            damaEstado.listenerJogo = ref(db, 'checkers/' + gameId);
+            onValue(damaEstado.listenerJogo, (snap) => {
+                const j = snap.val();
+                if (!j) { alert("Partida encerrada."); fecharJogoDama(); return; }
+                damaEstado.board = stringParaBoard(j.board);
+                damaEstado.turno = j.turno;
+                damaEstado.player1 = j.player1;
+                damaEstado.player2 = j.player2;
+                damaEstado.status = j.status;
+                damaEstado.timerStart = j.timerStart || 0;
+                damaEstado.selecionada = null;
+                damaEstado.movimentosValidos = [];
+                atualizarUIGeral();
+                desenharTabuleiro();
+                if (j.status === 'finished') {
+                    clearInterval(damaEstado.timerInterval);
+                    const venc = document.getElementById('dama-vencedor');
+                    venc.classList.remove('hidden');
+                    if (j.vencedor === 'empate') venc.innerText = '🤝 EMPATE!';
+                    else {
+                        const nome = (j.vencedor === j.player1.uid) ? j.player1.nome : j.player2.nome;
+                        venc.innerText = `🏆 ${nome} VENCEU!`;
+                    }
+                } else {
+                    iniciarTimerDisplay();
+                }
+            });
+            if (damaEstado.listenerChat) off(damaEstado.listenerChat);
+            damaEstado.listenerChat = ref(db, 'checkers/' + gameId + '/chat');
+            onValue(damaEstado.listenerChat, (snap) => { renderizarChatDama(snap.val() || {}); });
+            configurarCliqueCanvas();
+            iniciarTimerDisplay();
+        }
+
+function fecharJogoDama() {
+    document.getElementById('modal-dama-jogo').classList.add('hidden');
+    if (damaEstado.listenerJogo) { off(damaEstado.listenerJogo); damaEstado.listenerJogo = null; }
+    if (damaEstado.listenerChat) { off(damaEstado.listenerChat); damaEstado.listenerChat = null; }
+    clearInterval(damaEstado.timerInterval);
+    damaEstado.gameId = null;
+    damaEstado.status = 'idle';
+    damaEstado.selecionada = null;
+    damaEstado.movimentosValidos = [];
+}
+
+        function atualizarUIGeral() {
+            const p1 = damaEstado.player1, p2 = damaEstado.player2;
+            if (!p1 || !p2) return;
+            const p1El = document.getElementById('dama-p1-info');
+            const p2El = document.getElementById('dama-p2-info');
+            const ativo1 = damaEstado.turno === p1.uid;
+            const ativo2 = damaEstado.turno === p2.uid;
+            p1El.innerHTML = `<span>🔴 ${p1.nome}${p1.uid === meuId ? ' (Você)' : ''}</span><span>${ativo1 ? '▶' : ''}</span>`;
+            p2El.innerHTML = `<span>⚫ ${p2.nome}${p2.uid === meuId ? ' (Você)' : ''}</span><span>${ativo2 ? '▶' : ''}</span>`;
+            p1El.className = 'dama-player' + (ativo1 ? ' ativo' : '');
+            p2El.className = 'dama-player' + (ativo2 ? ' ativo' : '');
+            document.getElementById('dama-titulo-partida').innerText = `♟️ Damas: ${p1.nome} vs ${p2.nome}`;
+            const souPlayer = (p1.uid === meuId || p2.uid === meuId);
+            let vez = (damaEstado.turno === meuId) ? 'Sua vez!' : `Vez de ${damaEstado.turno === p1.uid ? p1.nome : p2.nome}`;
+            if (!souPlayer) vez = '👀 Espectador';
+            document.getElementById('dama-info-vez').innerText = vez;
+        }
+
+function iniciarTimerDisplay() {
+    // 🛡️ Só cria o interval UMA vez por partida
+    if (damaEstado.timerInterval) return;
+    if (damaEstado.status !== 'playing') return;
+
+    const el = document.getElementById('dama-info-timer');
+    const atualizar = () => {
+        if (!damaEstado.timerStart) { el.innerText = ''; return; }
+        const decorrido = Math.floor((Date.now() - damaEstado.timerStart) / 1000);
+        const restante = Math.max(0, DAMA_TEMPO_JOGADA - decorrido);
+        el.innerText = `⏱ ${restante}s`;
+        if (restante === 0 && damaEstado.turno === meuId) passarVezAutomatico();
+    };
+    atualizar();
+    damaEstado.timerInterval = setInterval(atualizar, 500);
+}
+
+async function passarVezAutomatico() {
+    if (damaEstado.status !== 'playing' || damaEstado.turno !== meuId) return;
+    if (!damaEstado.gameId) return;
+
+    // 🛡️ TRAVA: só passa a vez se o timer realmente estourou E ainda estamos no turno
+    const decorrido = Math.floor((Date.now() - damaEstado.timerStart) / 1000);
+    if (decorrido < DAMA_TEMPO_JOGADA) return;
+
+    // 🛡️ TRAVA: marca imediatamente que já passou a vez localmente para evitar disparo duplo
+    if (damaEstado._passandoVez) return;
+    damaEstado._passandoVez = true;
+
+    const p1 = damaEstado.player1, p2 = damaEstado.player2;
+    const adv = (damaEstado.turno === p1.uid) ? p2.uid : p1.uid;
+    try {
+        await update(ref(db, 'checkers/' + damaEstado.gameId), { turno: adv, timerStart: Date.now() });
+        enviarMensagemChatDamaSys(`⏱ Tempo esgotado! Vez de ${adv === p1.uid ? p1.nome : p2.nome}`);
+    } catch (e) {
+        console.warn("[Dama] Erro ao passar vez:", e);
+    } finally {
+        setTimeout(() => { damaEstado._passandoVez = false; }, 1500);
+    }
+}
+
+        function desenharTabuleiro() {
+            const canvas = document.getElementById('dama-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width / 8;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+                const i = coordParaIndice(r, c);
+                ctx.fillStyle = isCasaEscura(r, c) ? '#8b5a2b' : '#f0d9b5';
+                ctx.fillRect(c * size, r * size, size, size);
+                if (damaEstado.selecionada === i) { ctx.fillStyle = 'rgba(76,175,80,0.5)'; ctx.fillRect(c * size, r * size, size, size); }
+                if (damaEstado.movimentosValidos.includes(i)) {
+                    ctx.fillStyle = 'rgba(241,196,15,0.6)';
+                    ctx.beginPath(); ctx.arc(c * size + size/2, r * size + size/2, size/5, 0, Math.PI * 2); ctx.fill();
+                }
+                const peca = damaEstado.board[i];
+                if (peca === 'r' || peca === 'R' || peca === 'b' || peca === 'B') {
+                    const isVerm = (peca === 'r' || peca === 'R');
+                    const isDama = (peca === 'R' || peca === 'B');
+                    ctx.beginPath(); ctx.arc(c * size + size/2, r * size + size/2, size * 0.35, 0, Math.PI * 2);
+                    ctx.fillStyle = isVerm ? '#e81123' : '#222'; ctx.fill();
+                    ctx.strokeStyle = isVerm ? '#8b0000' : '#000'; ctx.lineWidth = 2; ctx.stroke();
+                    if (isDama) {
+                        ctx.fillStyle = '#f1c40f';
+                        ctx.font = 'bold ' + Math.floor(size * 0.5) + 'px Arial';
+                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                        ctx.fillText('♛', c * size + size/2, r * size + size/2);
+                    }
+                }
+            }
+        }
+function configurarCliqueCanvas() {
+    const canvas = document.getElementById('dama-canvas');
+    if (!canvas) return;
+    canvas.onclick = (e) => {
+        if (damaEstado.status !== 'playing' || damaEstado.turno !== meuId) return;
+        if (damaEstado.player1.uid !== meuId && damaEstado.player2.uid !== meuId) return;
+
+        // 🛡️ TRAVA: enquanto o movimento está indo pro banco, ignora cliques
+        if (damaEstado._enviandoMov) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left, y = e.clientY - rect.top;
+        const size = rect.width / 8;
+        const col = Math.floor(x / size), row = Math.floor(y / size);
+        if (col < 0 || col > 7 || row < 0 || row > 7) return;
+        const i = coordParaIndice(row, col);
+
+        if (damaEstado.movimentosValidos.includes(i)) {
+            damaEstado._enviandoMov = true;
+            executarMovimento(damaEstado.selecionada, i);
+            damaEstado.selecionada = null;
+            damaEstado.movimentosValidos = [];
+            desenharTabuleiro();
+            setTimeout(() => { damaEstado._enviandoMov = false; }, 500);
+            return;
+        }
+
+        const peca = damaEstado.board[i];
+        const minhaCor = (damaEstado.player1.uid === meuId) ? 'r' : 'b';
+        if (peca.toLowerCase() === minhaCor) {
+            damaEstado.selecionada = i;
+            damaEstado.movimentosValidos = calcularMovimentosValidos(i);
+            desenharTabuleiro();
+        } else {
+            damaEstado.selecionada = null;
+            damaEstado.movimentosValidos = [];
+            desenharTabuleiro();
+        }
+    };
+}
+
+        function calcularMovimentosValidos(i) {
+            const peca = damaEstado.board[i];
+            if (!peca || peca === '.') return [];
+            const minhaCor = (damaEstado.player1.uid === meuId) ? 'r' : 'b';
+            const isDama = (peca === 'R' || peca === 'B');
+            const { row, col } = indiceParaCoord(i);
+            const mov = [];
+            let dirs = [];
+            if (isDama) dirs = [[-1,-1],[-1,1],[1,-1],[1,1]];
+            else if (minhaCor === 'r') dirs = [[-1,-1],[-1,1]];
+            else dirs = [[1,-1],[1,1]];
+            for (const [dr, dc] of dirs) {
+                let r = row + dr, c = col + dc;
+                while (r >= 0 && r <= 7 && c >= 0 && c <= 7) {
+                    const idx = coordParaIndice(r, c);
+                    if (damaEstado.board[idx] === '.') {
+                        mov.push(idx);
+                        if (!isDama) break;
+                    } else {
+                        if (damaEstado.board[idx].toLowerCase() !== minhaCor) {
+                            const nr = r + dr, nc = c + dc;
+                            if (nr >= 0 && nr <= 7 && nc >= 0 && nc <= 7) {
+                                const idx2 = coordParaIndice(nr, nc);
+                                if (damaEstado.board[idx2] === '.') mov.push(idx2);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            return mov;
+        }
+
+        async function executarMovimento(de, para) {
+            const board = [...damaEstado.board];
+            const peca = board[de];
+            const minhaCor = (damaEstado.player1.uid === meuId) ? 'r' : 'b';
+            const { row: fr, col: fc } = indiceParaCoord(de);
+            const { row: tr, col: tc } = indiceParaCoord(para);
+            const dr = tr - fr, dc = tc - fc;
+            if (Math.abs(dr) >= 2 && Math.abs(dc) >= 2) {
+                const stepR = dr > 0 ? 1 : -1, stepC = dc > 0 ? 1 : -1;
+                let cr = fr + stepR, cc = fc + stepC;
+                while (cr !== tr && cc !== tc) {
+                    const ci = coordParaIndice(cr, cc);
+                    if (board[ci] !== '.') board[ci] = '.';
+                    cr += stepR; cc += stepC;
+                }
+            }
+            board[para] = peca;
+            board[de] = '.';
+            if (peca === 'r' && tr === 0) board[para] = 'R';
+            if (peca === 'b' && tr === 7) board[para] = 'B';
+            const advCor = (minhaCor === 'r') ? 'b' : 'r';
+            const temAdv = board.some(p => p.toLowerCase() === advCor);
+            const temEu = board.some(p => p.toLowerCase() === minhaCor);
+            let updateData = {
+                board: boardParaString(board),
+                turno: (damaEstado.turno === damaEstado.player1.uid) ? damaEstado.player2.uid : damaEstado.player1.uid,
+                timerStart: Date.now()
+            };
+            if (!temAdv) { updateData.status = 'finished'; updateData.vencedor = meuId; }
+            else if (!temEu) { updateData.status = 'finished'; updateData.vencedor = (damaEstado.player1.uid === meuId) ? damaEstado.player2.uid : damaEstado.player1.uid; }
+            try {
+                await update(ref(db, 'checkers/' + damaEstado.gameId), updateData);
+                if (updateData.status === 'finished') {
+                    const nomeVenc = (updateData.vencedor === damaEstado.player1.uid) ? damaEstado.player1.nome : damaEstado.player2.nome;
+                    enviarMensagemChatDamaSys(`🏆 ${nomeVenc} venceu a partida!`);
+                }
+            } catch (e) { alert("Erro ao mover: " + e.message); }
+        }
+
+        function renderizarChatDama(msgs) {
+            const chatEl = document.getElementById('dama-chat');
+            chatEl.innerHTML = '';
+            const arr = Object.entries(msgs).map(([id, d]) => ({ id, ...d })).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            arr.forEach(m => {
+                const d = document.createElement('div');
+                if (m.tipo === 'sistema') {
+                    d.className = 'dm sys';
+                    d.innerText = m.texto;
+                } else {
+                    const isMeu = m.idAutor === meuId;
+                    d.className = 'dm ' + (isMeu ? 'me' : 'other');
+                    d.innerHTML = `<div class="au">${m.autor}</div><div>${formatarTexto(m.texto)}</div>`;
+                }
+                chatEl.appendChild(d);
+            });
+            chatEl.scrollTop = chatEl.scrollHeight;
+        }
+
+        function enviarMensagemChatDama() {
+            const inp = document.getElementById('dama-chat-input');
+            const txt = inp.value.trim();
+            if (!txt || !damaEstado.gameId) return;
+            set(push(ref(db, 'checkers/' + damaEstado.gameId + '/chat')), {
+                tipo: 'user', autor: meuNome, idAutor: meuId, texto: txt, timestamp: serverTimestamp()
+            });
+            inp.value = '';
+        }
+
+        function enviarMensagemChatDamaSys(texto) {
+            if (!damaEstado.gameId) return;
+            set(push(ref(db, 'checkers/' + damaEstado.gameId + '/chat')), {
+                tipo: 'sistema', autor: 'Sistema', idAutor: 'sys', texto: texto, timestamp: serverTimestamp()
+            });
+        }
+
+        function configurarListenerPartidasAbertas() {
+            if (damaEstado.partidasAbertasListener) off(damaEstado.partidasAbertasListener);
+            damaEstado.partidasAbertasListener = ref(db, 'checkers');
+            onValue(damaEstado.partidasAbertasListener, (snap) => {
+                const todos = snap.val() || {};
+                damaEstado.partidasAbertas = {};
+                for (const gid in todos) {
+                    const j = todos[gid];
+                    if (j.status === 'playing' && j.player1 && j.player2) {
+                        damaEstado.partidasAbertas[gid] = j;
+                    }
+                }
+                renderizarPartidasNasSalas();
+            });
+        }
+
+        function renderizarPartidasNasSalas() {
+            const cont = document.getElementById('damas-abertas-list');
+            if (!cont) return;
+            cont.innerHTML = '';
+            const abertas = Object.entries(damaEstado.partidasAbertas || {});
+            if (abertas.length === 0) return;
+            abertas.forEach(([gid, j]) => {
+                const li = document.createElement('li');
+                li.className = 'contact-item';
+                li.style.cursor = 'pointer';
+                li.style.background = '#fff8e1';
+                li.onclick = () => entrarComoEspectador(gid);
+                const souPlayer = (j.player1.uid === meuId || j.player2.uid === meuId);
+                li.innerHTML = `
+                    <span style="font-size:16px;">🎮</span>
+                    <div class="contact-info" style="display:flex; flex-direction:column; flex:1; min-width:0;">
+                        <strong style="color:#9b59b6; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Dama: ${j.player1.nome} vs ${j.player2.nome}</strong>
+                        <span style="font-size:10px; color:#666;">${souPlayer ? '▶ Sua partida — clique para voltar' : '👀 Assistir'}</span>
+                    </div>
+                `;
+                cont.appendChild(li);
+            });
+        }
+
+        function entrarComoEspectador(gameId) { abrirJogoDama(gameId); }
+    </script>
+</body>
+</html>
